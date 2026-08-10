@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Tag - Modern UI Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --canvas:#F3F5F4;
+            --surface:#FFFFFF;
+            --surface-alt:#FAFBFA;
+            --ink:#16211F;
+            --muted:#5B6B67;
+            --line:#DDE3E0;
+            --accent:#146356;
+            --accent-soft:#DCEDE8;
+            --radius:10px;
+            --shadow:0 1px 2px rgba(22,33,31,0.06), 0 4px 14px rgba(22,33,31,0.05);
+        }
+        /* รีเซ็ตค่าเริ่มต้นและฟอนต์ */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        body {
+            background-color: var(--canvas);
+            color: var(--ink);
+            padding: 0 0 30px;
+        }
+
+        .page-content{
+            padding: 20px 40px 0;
+        }
+
+        /* Topbar (shared with Home) */
+        .topbar {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:14px 28px;
+            background:var(--surface-alt);
+            border-bottom:1px solid var(--line);
+            margin-bottom: 25px;
+        }
+        .nav-left{display:flex; align-items:center; gap:6px;}
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap:4px;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            transition: background 0.15s ease;
+            color: var(--ink);
+            background: transparent;
+            border: none;
+            font-size: 12.5px;
+        }
+        .nav-btn:hover {
+            background-color: var(--accent-soft);
+        }
+        .nav-btn svg{width:20px; height:20px; stroke:var(--ink); fill:none; stroke-width:1.6;}
+        .nav-btn span{font-size:12.5px; font-weight:500; color:var(--muted);}
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .page-label {
+            font-family:'Space Grotesk',sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: .2px;
+            color: var(--ink);
+        }
+        .avatar {
+            width:42px; height:42px; border-radius:50%;
+            background: var(--accent-soft);
+            border: 1.5px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow:hidden; cursor:pointer; flex-shrink:0;
+        }
+        .avatar svg{width:22px; height:22px; stroke:var(--accent); fill:none; stroke-width:1.6;}
+
+        /* ส่วน Toolbar ค้นหาและจัดการแท็ก */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        /* กล่องจัดการแท็กด้านซ้าย */
+        .tag-tools {
+            background-color: var(--surface-alt);
+            border: 1px solid var(--line);
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .tag-tools select, .right-tools select, .right-tools input {
+            padding: 8px 12px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            outline: none;
+            font-size: 14px;
+            background-color: #fff;
+        }
+        .action-icon {
+            width: 32px;
+            height: 32px;
+            background-color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 1px solid var(--line);
+            transition: 0.2s;
+        }
+        .action-icon:hover {
+            background-color: var(--surface-alt);
+        }
+        .color-circle {
+            width: 24px;
+            height: 24px;
+            background-color: #fff;
+            border: 2px solid var(--line);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        /* เครื่องมือด้านขวา (Sort & Search) */
+        .right-tools {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* กล่องเนื้อหาหลักสีขาว */
+        .content-area {
+            background-color: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            
+            /* ใช้ Grid แสดงผลการ์ด */
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 25px;
+            min-height: 500px; /* จองพื้นที่ไว้เผื่อมีไฟล์น้อย */
+        }
+
+        /* การ์ดไฟล์ */
+        .card {
+            background-color: var(--surface-alt);
+            border: 2px solid var(--line);
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            height: 220px;
+        }
+        .card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        .card-checkbox {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .card-img-placeholder {
+            background-color: #dee2e6;
+            border-radius: 6px;
+            flex-grow: 1;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: #adb5bd;
+        }
+        .card-name {
+            text-align: center;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- แถบเมนู Navbar -->
+    <div class="topbar">
+        <div class="nav-left">
+            <button class="nav-btn" onclick="alert('Home')">
+                <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+                <span>Home</span>
+            </button>
+            <button class="nav-btn" onclick="alert('Import File')">
+                <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                <span>Import File</span>
+            </button>
+            <button class="nav-btn" onclick="alert('Create Tag')">
+                <svg viewBox="0 0 24 24"><path d="M12 8v8M8 12h8"/><rect x="3" y="3" width="18" height="18" rx="4"/></svg>
+                <span>Create Tag</span>
+            </button>
+            <button class="nav-btn" onclick="alert('Setting')">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg>
+                <span>Setting</span>
+            </button>
+        </div>
+        <div class="nav-right">
+            <span class="page-label">Manage Tag</span>
+            <div class="avatar" title="Profile">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c1.2-3.6 4-5.4 7-5.4s5.8 1.8 7 5.4"/></svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-content">
+
+    <!-- แถบเครื่องมือ (Toolbar) -->
+    <div class="toolbar">
+        <div class="tag-tools">
+            <select style="width: 150px;">
+                <option>เลือกแท็ก...</option>
+                <option>เอกสารโปรเจกต์</option>
+                <option>รูปภาพ UI</option>
+            </select>
+            <div class="color-circle" title="เปลี่ยนสีแท็ก"></div>
+            <div class="action-icon" title="แก้ไขแท็ก" onclick="alert('แก้ไขแท็ก')">✏️</div>
+            <div class="action-icon" title="ลบแท็ก" onclick="alert('ลบแท็ก')" style="color: red;">🗑️</div>
+        </div>
+        
+        <div class="right-tools">
+            <select style="width: 100px;">
+                <option>Sort ⬇️</option>
+                <option>ชื่อไฟล์</option>
+                <option>วันที่</option>
+            </select>
+            <input type="text" placeholder="Search tag :" style="width: 200px;">
+        </div>
+    </div>
+
+    <!-- พื้นที่แสดงการ์ด (ผสมความเป็นกริดภาพ 1 กับความคลีนภาพ 2) -->
+    <div class="content-area" id="cardContainer">
+        <!-- การ์ดจำลองจะถูกสร้างด้วย JavaScript -->
+    </div>
+
+    </div>
+
+    <script>
+        // ข้อมูล Mock สำหรับแสดงเป็นกริด
+        const mockFiles = [
+            { id: 1, name: "Prototype_V1.fig", icon: "🎨" },
+            { id: 2, name: "Database_Diagram.png", icon: "🖼️" },
+            { id: 3, name: "Project_Proposal.pdf", icon: "📄" },
+            { id: 4, name: "User_Flow.jpg", icon: "🖼️" },
+            { id: 5, name: "Presentation.pptx", icon: "📊" }
+        ];
+
+        function renderCards() {
+            const container = document.getElementById('cardContainer');
+            container.innerHTML = ''; 
+
+            mockFiles.forEach(file => {
+                const cardHTML = `
+                    <div class="card" onclick="toggleCheckbox(this)">
+                        <input type="checkbox" class="card-checkbox" onclick="event.stopPropagation()">
+                        <div class="card-img-placeholder">
+                            ${file.icon}
+                        </div>
+                        <div class="card-name">${file.name}</div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+
+        function toggleCheckbox(cardElement) {
+            const checkbox = cardElement.querySelector('.card-checkbox');
+            checkbox.checked = !checkbox.checked;
+        }
+
+        window.onload = renderCards;
+    </script>
+</body>
+</html>

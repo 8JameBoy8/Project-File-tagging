@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Approve/Select</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas:#F3F5F4;
+    --surface:#FFFFFF;
+    --surface-alt:#FAFBFA;
+    --ink:#16211F;
+    --muted:#5B6B67;
+    --line:#DDE3E0;
+    --accent:#146356;
+    --accent-soft:#DCEDE8;
+    --danger:#B23A2E;
+    --danger-soft:#F7E3E0;
+    --ok:#1F7A4D;
+    --ok-soft:#DDEFE3;
+    --t-image:#3B6FA6;   --t-image-soft:#E2EBF4;
+    --t-video:#7A4FB0;   --t-video-soft:#EAE2F5;
+    --t-audio:#C97C1F;   --t-audio-soft:#F6E9D6;
+    --t-doc:#146356;     --t-doc-soft:#DCEDE8;
+    --t-other:#5B6B67;   --t-other-soft:#E7EAE9;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(22,33,31,0.06), 0 4px 14px rgba(22,33,31,0.05);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0; height:100%;}
+  body{
+    background:var(--canvas);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    overflow:hidden;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+  button{font-family:inherit; cursor:pointer;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  /* ===== Top bar ===== */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 28px; background:var(--surface-alt); border-bottom:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .nav-left{display:flex; align-items:center; gap:6px;}
+  .nav-btn{
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    background:transparent; border:none; padding:8px 16px; border-radius:var(--radius);
+    color:var(--ink); transition:background .15s ease;
+  }
+  .nav-btn:hover{background:var(--accent-soft);}
+  .nav-btn svg{width:20px; height:20px; stroke:var(--ink); fill:none; stroke-width:1.6;}
+  .nav-btn span{font-size:12.5px; font-weight:500; color:var(--muted);}
+  .nav-right{display:flex; align-items:center; gap:16px;}
+  .page-label{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:20px; letter-spacing:.2px;}
+  .avatar{
+    width:42px; height:42px; border-radius:50%; background:var(--accent-soft);
+    border:1.5px solid var(--line); display:flex; align-items:center; justify-content:center;
+    overflow:hidden; cursor:pointer; position:relative; flex-shrink:0;
+  }
+  .avatar svg{width:22px; height:22px; stroke:var(--accent); fill:none; stroke-width:1.6;}
+  .avatar img{width:100%; height:100%; object-fit:cover;}
+  .avatar-hint{
+    position:absolute; inset:0; background:rgba(20,99,86,0.55);
+    display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .15s ease;
+  }
+  .avatar:hover .avatar-hint{opacity:1;}
+  .avatar-hint svg{width:16px; height:16px; stroke:#fff;}
+
+  /* ===== Layout ===== */
+  .layout{ display:flex; gap:22px; padding:18px 28px; flex:1; min-height:0; overflow:hidden; }
+  .panel-left{
+    flex:0 1 40%; max-width:40%; min-width:320px;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:16px;
+    display:flex; flex-direction:column; min-height:0; overflow-y:auto;
+  }
+  .panel-right{ flex:1 1 60%; min-width:340px; display:flex; flex-direction:column; min-height:0; }
+
+  /* ===== Preview ===== */
+  .preview-box{
+    width:100%; flex:1 1 auto; min-height:140px; max-height:34vh;
+    background:var(--surface-alt); border:1px solid var(--line); border-radius:8px;
+    display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;
+  }
+  .preview-box img, .preview-box video{ width:100%; height:100%; object-fit:contain; background:#0F1614; }
+  .preview-empty{ display:flex; flex-direction:column; align-items:center; gap:10px; color:var(--muted); }
+  .preview-empty svg{width:38px; height:38px; stroke:var(--muted); fill:none; stroke-width:1.4;}
+  .preview-empty span{font-size:13.5px;}
+  .preview-audio-wrap{ display:flex; flex-direction:column; align-items:center; gap:18px; width:80%; }
+  .preview-audio-wrap svg{width:44px; height:44px; stroke:var(--t-audio); fill:none; stroke-width:1.4;}
+  .preview-audio-wrap audio{width:100%;}
+  .other-file-view{display:flex; flex-direction:column; align-items:center; gap:12px;}
+  .type-badge-lg{ width:70px; height:70px; border-radius:14px; display:flex; align-items:center; justify-content:center; }
+  .type-badge-lg svg{width:32px; height:32px; stroke-width:1.5; fill:none;}
+  .ext-label{
+    font-family:'JetBrains Mono',monospace; font-size:12.5px; font-weight:500;
+    color:var(--muted); letter-spacing:.4px; text-transform:uppercase;
+  }
+
+  /* ===== Info box ===== */
+  .info-box{
+    margin-top:14px; background:var(--surface-alt); border:1px solid var(--line);
+    border-radius:8px; padding:14px 16px; flex-shrink:0;
+  }
+  .info-row{ display:flex; gap:8px; font-size:13.5px; padding:4px 0; }
+  .info-row .info-label{ color:var(--muted); font-weight:500; flex-shrink:0; min-width:96px; }
+  .info-row .info-value{ font-family:'JetBrains Mono',monospace; color:var(--ink); word-break:break-word; }
+  .info-tags{ display:flex; flex-wrap:wrap; gap:6px; }
+  .tag-chip{
+    display:inline-flex; align-items:center; gap:5px;
+    font-family:'JetBrains Mono',monospace; font-size:11.5px;
+    background:var(--surface); border:1px solid var(--line);
+    padding:3px 8px 3px 6px; border-radius:5px; color:var(--ink);
+  }
+  .tag-dot{width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0;}
+
+  /* ===== decision buttons ===== */
+  .decision-row{ display:flex; gap:10px; margin-top:16px; flex-shrink:0; }
+  .btn-decision{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:8px;
+    border-radius:8px; border:1px solid transparent; padding:11px 14px;
+    font-weight:600; font-size:14px; transition:filter .12s ease, transform .05s ease;
+  }
+  .btn-decision:active{transform:translateY(1px);}
+  .btn-decision svg{width:17px; height:17px; stroke-width:1.8; fill:none;}
+  .btn-approve{background:var(--ok-soft); color:var(--ok); border-color:#BFE0CC;}
+  .btn-approve:hover{filter:brightness(0.97);}
+  .btn-reject{background:var(--danger-soft); color:var(--danger); border-color:#EFC7C0;}
+  .btn-reject:hover{filter:brightness(0.97);}
+  .btn-decision:disabled{opacity:.45; cursor:not-allowed;}
+
+  .queue-done{
+    margin-top:auto; text-align:center; padding:18px 10px; color:var(--muted); font-size:13px;
+  }
+
+  /* ===== Right: filter bar / user selector ===== */
+  .filter-bar{ display:flex; justify-content:flex-end; gap:10px; margin-bottom:14px; position:relative; flex-shrink:0; }
+  .dropdown{position:relative;}
+  .dropdown-btn{
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:8px; padding:9px 14px; font-size:13.5px; font-weight:500;
+    color:var(--ink); box-shadow:var(--shadow);
+  }
+  .dropdown-btn svg{width:15px; height:15px; stroke:var(--ink); fill:none; stroke-width:1.6;}
+  .dropdown-btn .chev{width:11px; height:11px; margin-left:2px; stroke:var(--muted);}
+  .dropdown-btn .count-badge{
+    background:var(--danger); color:#fff; font-size:10.5px; font-weight:700;
+    border-radius:20px; padding:1px 6px; font-family:'JetBrains Mono',monospace;
+  }
+  .dropdown-panel{
+    position:absolute; top:calc(100% + 8px); right:0; z-index:20;
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 8px 24px rgba(22,33,31,0.14); min-width:260px; padding:8px; display:none;
+  }
+  .dropdown-panel.open{display:block;}
+  .user-option{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:9px 10px; border-radius:6px; font-size:13.5px; color:var(--ink);
+  }
+  .user-option:hover{background:var(--surface-alt);}
+  .user-option.active{color:var(--accent); font-weight:600; background:var(--accent-soft);}
+  .user-option .u-count{
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--danger);
+    background:var(--danger-soft); border-radius:20px; padding:1px 7px; flex-shrink:0;
+  }
+  .user-empty{padding:14px 10px; color:var(--muted); font-size:12.5px; text-align:center;}
+
+  /* ===== File list ===== */
+  .file-list{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); flex:1 1 0; min-height:0; overflow-y:auto;
+  }
+  .file-row{
+    display:flex; align-items:center; gap:14px; padding:12px 16px; border-bottom:1px solid var(--line);
+    background:var(--surface); text-align:left; width:100%; border-left:3px solid transparent;
+    transition:background .12s ease;
+  }
+  .file-row:last-child{border-bottom:none;}
+  .file-row:hover{background:var(--surface-alt);}
+  .file-row.selected{background:var(--accent-soft); border-left-color:var(--accent);}
+  .file-thumb{
+    width:52px; height:52px; border-radius:8px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; overflow:hidden; border:1px solid var(--line);
+  }
+  .file-thumb svg{width:22px; height:22px; stroke-width:1.6; fill:none;}
+  .file-info{flex:1; min-width:0; text-align:left;}
+  .file-name{
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px;
+    color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .file-tags{display:flex; flex-wrap:wrap; gap:5px; margin-top:6px;}
+  .file-size{
+    font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--muted);
+    flex-shrink:0; white-space:nowrap;
+  }
+  .empty-state{ padding:48px 20px; text-align:center; color:var(--muted); font-size:13.5px; }
+  .empty-state svg{width:34px; height:34px; stroke:var(--ok); fill:none; stroke-width:1.5; margin-bottom:10px;}
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; padding:11px 20px; border-radius:8px;
+    font-size:13.5px; font-weight:500; opacity:0; pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.2);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (max-width: 860px){
+    html,body{height:auto; overflow:auto;}
+    body{display:block;}
+    .layout{flex-direction:column; overflow:visible; height:auto; padding:16px;}
+    .panel-left{width:100%; max-width:none; flex:none; overflow-y:visible;}
+    .preview-box{max-height:none; aspect-ratio:4/3;}
+    .panel-right{flex:none; min-height:0;}
+    .file-list{flex:none; max-height:60vh;}
+    .topbar{padding:12px 16px; flex-wrap:wrap; gap:10px;}
+    .nav-btn span{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="nav-left">
+    <button class="nav-btn" data-page="home">
+      <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-btn" data-page="settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg>
+      <span>Setting</span>
+    </button>
+  </div>
+  <div class="nav-right">
+    <span class="page-label">Approve/Select</span>
+    <div class="avatar" id="avatarBtn" title="เปลี่ยนรูปโปรไฟล์">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c1.2-3.6 4-5.4 7-5.4s5.8 1.8 7 5.4"/></svg>
+      <div class="avatar-hint"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>
+      <input type="file" id="avatarInput" accept="image/*" style="display:none;">
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- LEFT: PREVIEW + DECISION -->
+  <div class="panel-left">
+    <div class="preview-box" id="previewBox">
+      <div class="preview-empty">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 15l-5-5-11 11"/></svg>
+        <span>เลือกไฟล์ทางด้านขวาเพื่อตรวจสอบ</span>
+      </div>
+    </div>
+
+    <div class="info-box" id="infoBox">
+      <div class="info-row"><span class="info-label">File Name</span><span class="info-value" id="infoName">—</span></div>
+      <div class="info-row"><span class="info-label">File Type</span><span class="info-value" id="infoType">—</span></div>
+      <div class="info-row"><span class="info-label">File Size</span><span class="info-value" id="infoSize">—</span></div>
+      <div class="info-row"><span class="info-label">Tags</span><span class="info-value info-tags" id="infoTags">—</span></div>
+      <div class="info-row"><span class="info-label">Uploaded By</span><span class="info-value" id="infoUploader">—</span></div>
+    </div>
+
+    <div class="decision-row">
+      <button class="btn-decision btn-approve" id="btnApprove" disabled>
+        <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+        Approve
+      </button>
+      <button class="btn-decision btn-reject" id="btnReject" disabled>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5l5 5M14.5 9.5l-5 5"/></svg>
+        Not Approve
+      </button>
+    </div>
+  </div>
+
+  <!-- RIGHT: USER SELECTOR + FILE LIST -->
+  <div class="panel-right">
+    <div class="filter-bar">
+      <div class="dropdown" id="userDropdown">
+        <button class="dropdown-btn" id="userBtn">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c1.2-3.6 4-5.4 7-5.4s5.8 1.8 7 5.4"/></svg>
+          <span id="userLabel">Selected Username</span>
+          <span class="count-badge" id="totalPendingBadge" style="display:none;">0</span>
+          <svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="dropdown-panel" id="userPanel"></div>
+      </div>
+    </div>
+
+    <div class="file-list" id="fileList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ MOCK DATA — files flagged as risky/suspicious by the system ============ */
+const TYPE_META = {
+  image:    { color:"var(--t-image)",  soft:"var(--t-image-soft)",  icon:`<circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5-11 11"/><rect x="3" y="3" width="18" height="18" rx="3"/>` },
+  video:    { color:"var(--t-video)",  soft:"var(--t-video-soft)",  icon:`<rect x="2" y="5" width="15" height="14" rx="2"/><path d="M17 9l5-3v12l-5-3z"/>` },
+  audio:    { color:"var(--t-audio)",  soft:"var(--t-audio-soft)",  icon:`<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>` },
+  document: { color:"var(--t-doc)",    soft:"var(--t-doc-soft)",    icon:`<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>` },
+  other:    { color:"var(--t-other)",  soft:"var(--t-other-soft)",  icon:`<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>` },
+};
+
+const FLAGGED_FILES = [
+  { id:1, name:"invoice_batch_final.zip",   type:"other", ext:"ZIP", sizeMB:25,  tags:["Java","ไฟล์ต้องสงสัย"],     uploadedBy:"Decha Wongsawat", src:null, status:"pending" },
+  { id:2, name:"setup_installer.exe",       type:"other", ext:"EXE", sizeMB:48,  tags:["ไฟล์ปฏิบัติการ"],           uploadedBy:"Decha Wongsawat", src:null, status:"pending" },
+  { id:3, name:"campaign-teaser-raw.mp4",   type:"video", ext:"MP4", sizeMB:210, tags:["วิดีโอ","แคมเปญ"],          uploadedBy:"Ganya Srisawat",  src:"https://www.w3schools.com/html/mov_bbb.mp4", status:"pending" },
+  { id:4, name:"unlicensed-track.mp3",      type:"audio", ext:"MP3", sizeMB:8,   tags:["ไฟล์เสียง","ลิขสิทธิ์"],    uploadedBy:"Ganya Srisawat",  src:"https://www.w3schools.com/html/horse.ogg", status:"pending" },
+  { id:5, name:"internal-memo-leak.pdf",    type:"document", ext:"PDF", sizeMB:2, tags:["เอกสารลับ"],               uploadedBy:"Jinda Meesuk",    src:null, status:"pending" },
+];
+
+/* ============ STATE ============ */
+let files = JSON.parse(JSON.stringify(FLAGGED_FILES));
+let selectedUsername = null;
+let selectedFileId = null;
+
+/* ============ HELPERS ============ */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(()=> t.classList.remove('show'), 2400);
+}
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtSize(mb){ return mb >= 1000 ? (mb/1000).toFixed(1)+" GB" : mb+" MB"; }
+
+function pendingFiles(){ return files.filter(f => f.status === "pending"); }
+
+/* preserve first-appearance order of usernames among pending files */
+function usersWithPending(){
+  const seen = [];
+  pendingFiles().forEach(f=>{
+    if(!seen.includes(f.uploadedBy)) seen.push(f.uploadedBy);
+  });
+  return seen.map(u => ({ name:u, count: pendingFiles().filter(f=>f.uploadedBy===u).length }));
+}
+
+/* ============ RENDER: USER DROPDOWN ============ */
+function renderUserDropdown(){
+  const users = usersWithPending();
+  const panel = document.getElementById('userPanel');
+  const label = document.getElementById('userLabel');
+  const badge = document.getElementById('totalPendingBadge');
+  const totalPending = pendingFiles().length;
+
+  if(users.length === 0){
+    panel.innerHTML = `<div class="user-empty">ไม่มีไฟล์ที่ต้องตรวจสอบแล้ว</div>`;
+    label.textContent = "Selected Username";
+    badge.style.display = "none";
+  } else {
+    panel.innerHTML = users.map(u => `
+      <div class="user-option ${u.name===selectedUsername?'active':''}" data-user="${escapeHtml(u.name)}">
+        <span>${escapeHtml(u.name)}</span>
+        <span class="u-count">${u.count} ไฟล์</span>
+      </div>`).join('');
+    panel.querySelectorAll('.user-option').forEach(opt=>{
+      opt.addEventListener('click', ()=>{
+        switchUser(opt.dataset.user);
+        document.getElementById('userPanel').classList.remove('open');
+      });
+    });
+    label.textContent = selectedUsername ? selectedUsername : "Selected Username";
+    badge.style.display = "inline-block";
+    badge.textContent = totalPending;
+  }
+}
+
+/* ============ SWITCH USER ============ */
+function switchUser(username){
+  selectedUsername = username;
+  const userFiles = pendingFiles().filter(f => f.uploadedBy === username);
+  selectedFileId = userFiles.length ? userFiles[0].id : null;
+  renderUserDropdown();
+  renderFileList();
+  renderPreview();
+}
+
+/* ============ RENDER: FILE LIST ============ */
+function renderFileList(){
+  const container = document.getElementById('fileList');
+  if(!selectedUsername){
+    container.innerHTML = `<div class="empty-state">
+        <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><br>
+        เลือก User ทางด้านบนขวาเพื่อดูไฟล์ที่ต้องตรวจสอบ
+      </div>`;
+    return;
+  }
+  const list = pendingFiles().filter(f => f.uploadedBy === selectedUsername);
+  if(list.length === 0){
+    container.innerHTML = `<div class="empty-state">
+        <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><br>
+        ตรวจสอบไฟล์ของ ${escapeHtml(selectedUsername)} ครบแล้ว
+      </div>`;
+    return;
+  }
+  container.innerHTML = list.map(f => {
+    const m = TYPE_META[f.type] || TYPE_META.other;
+    return `
+    <button class="file-row ${f.id===selectedFileId?'selected':''}" data-id="${f.id}">
+      <div class="file-thumb" style="background:${m.soft};"><svg viewBox="0 0 24 24" style="stroke:${m.color};">${m.icon}</svg></div>
+      <div class="file-info">
+        <div class="file-name">${escapeHtml(f.name)}</div>
+        <div class="file-tags">
+          ${f.tags.map(t => `<span class="tag-chip"><span class="tag-dot"></span>${escapeHtml(t)}</span>`).join('')}
+        </div>
+      </div>
+      <div class="file-size">${fmtSize(f.sizeMB)}</div>
+    </button>`;
+  }).join('');
+
+  container.querySelectorAll('.file-row').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      selectedFileId = parseInt(row.dataset.id,10);
+      renderFileList();
+      renderPreview();
+    });
+  });
+}
+
+/* ============ RENDER: PREVIEW + INFO ============ */
+function renderPreview(){
+  const box = document.getElementById('previewBox');
+  const btnApprove = document.getElementById('btnApprove');
+  const btnReject = document.getElementById('btnReject');
+  const f = files.find(x => x.id === selectedFileId && x.status === "pending");
+
+  if(!f){
+    box.innerHTML = `<div class="preview-empty">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 15l-5-5-11 11"/></svg>
+        <span>เลือกไฟล์ทางด้านขวาเพื่อตรวจสอบ</span>
+      </div>`;
+    document.getElementById('infoName').textContent = "—";
+    document.getElementById('infoType').textContent = "—";
+    document.getElementById('infoSize').textContent = "—";
+    document.getElementById('infoTags').innerHTML = "—";
+    document.getElementById('infoUploader').textContent = "—";
+    btnApprove.disabled = true;
+    btnReject.disabled = true;
+    return;
+  }
+
+  const m = TYPE_META[f.type] || TYPE_META.other;
+  if(f.type === "video" && f.src){
+    box.innerHTML = `<video src="${f.src}" controls playsinline></video>`;
+  } else if(f.type === "audio" && f.src){
+    box.innerHTML = `<div class="preview-audio-wrap">
+        <svg viewBox="0 0 24 24" style="stroke:${m.color};">${m.icon}</svg>
+        <audio src="${f.src}" controls style="width:100%;"></audio>
+      </div>`;
+  } else if(f.type === "image" && f.src){
+    box.innerHTML = `<img src="${f.src}" alt="${escapeHtml(f.name)}">`;
+  } else {
+    box.innerHTML = `<div class="other-file-view">
+        <div class="type-badge-lg" style="background:${m.soft};">
+          <svg viewBox="0 0 24 24" style="stroke:${m.color};">${m.icon}</svg>
+        </div>
+        <div class="ext-label">.${f.ext} FILE</div>
+      </div>`;
+  }
+
+  document.getElementById('infoName').textContent = f.name;
+  document.getElementById('infoType').textContent = f.ext;
+  document.getElementById('infoSize').textContent = fmtSize(f.sizeMB);
+  document.getElementById('infoTags').innerHTML = f.tags.length
+    ? f.tags.map(t => `<span class="tag-chip"><span class="tag-dot"></span>${escapeHtml(t)}</span>`).join('')
+    : "—";
+  document.getElementById('infoUploader').textContent = f.uploadedBy;
+
+  btnApprove.disabled = false;
+  btnReject.disabled = false;
+}
+
+/* ============ DECISIONS ============ */
+function resolveFile(id, decision){
+  const f = files.find(x => x.id === id);
+  if(!f) return;
+  f.status = decision; // "approved" | "rejected"
+  showToast(decision === "approved"
+    ? `อนุมัติไฟล์ "${f.name}" แล้ว`
+    : `ไม่อนุมัติไฟล์ "${f.name}" แล้ว`);
+
+  const remainingForUser = pendingFiles().filter(x => x.uploadedBy === f.uploadedBy);
+
+  if(remainingForUser.length > 0){
+    selectedFileId = remainingForUser[0].id;
+  } else {
+    const nextUsers = usersWithPending();
+    if(nextUsers.length > 0){
+      showToast(`ตรวจสอบไฟล์ของ ${f.uploadedBy} ครบแล้ว — ย้ายไปตรวจสอบไฟล์ของ ${nextUsers[0].name} ต่อ`);
+      selectedUsername = nextUsers[0].name;
+      const userFiles = pendingFiles().filter(x => x.uploadedBy === selectedUsername);
+      selectedFileId = userFiles.length ? userFiles[0].id : null;
+    } else {
+      selectedUsername = null;
+      selectedFileId = null;
+      showToast("ตรวจสอบไฟล์ที่มีความเสี่ยงครบทุกคนแล้ว");
+    }
+  }
+  renderUserDropdown();
+  renderFileList();
+  renderPreview();
+}
+
+document.getElementById('btnApprove').addEventListener('click', ()=>{
+  if(selectedFileId != null) resolveFile(selectedFileId, "approved");
+});
+document.getElementById('btnReject').addEventListener('click', ()=>{
+  if(selectedFileId != null) resolveFile(selectedFileId, "rejected");
+});
+
+/* ============ USER DROPDOWN TOGGLE ============ */
+const userBtn = document.getElementById('userBtn');
+const userPanel = document.getElementById('userPanel');
+userBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  userPanel.classList.toggle('open');
+});
+document.addEventListener('click', ()=> userPanel.classList.remove('open'));
+
+/* ============ TOP NAV ============ */
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    if(btn.dataset.page === "home"){
+      window.location.href = "admin-accounts-home.html";
+      return;
+    }
+    const names = { settings:"Setting" };
+    showToast(`หน้า "${names[btn.dataset.page]}" ยังไม่เปิดใช้งานในตัวอย่างนี้`);
+  });
+});
+
+/* ============ AVATAR UPLOAD ============ */
+const avatarBtn = document.getElementById('avatarBtn');
+const avatarInput = document.getElementById('avatarInput');
+avatarBtn.addEventListener('click', ()=> avatarInput.click());
+avatarInput.addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    avatarBtn.innerHTML = `<img src="${ev.target.result}" alt="Profile">
+      <div class="avatar-hint"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>`;
+    avatarBtn.appendChild(avatarInput);
+  };
+  reader.readAsDataURL(file);
+});
+
+/* ============ INIT ============ */
+(function init(){
+  const users = usersWithPending();
+  if(users.length > 0){
+    switchUser(users[0].name);
+  } else {
+    renderUserDropdown();
+    renderFileList();
+    renderPreview();
+  }
+})();
+</script>
+</body>
+</html>

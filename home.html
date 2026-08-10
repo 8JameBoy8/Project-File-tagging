@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archive — Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas:#F3F5F4;
+    --surface:#FFFFFF;
+    --surface-alt:#FAFBFA;
+    --ink:#16211F;
+    --muted:#5B6B67;
+    --line:#DDE3E0;
+    --accent:#146356;
+    --accent-soft:#DCEDE8;
+    --danger:#B23A2E;
+    --danger-soft:#F7E3E0;
+    --ok:#1F7A4D;
+    --ok-soft:#DDEFE3;
+    --t-image:#3B6FA6;
+    --t-image-soft:#E2EBF4;
+    --t-video:#7A4FB0;
+    --t-video-soft:#EAE2F5;
+    --t-audio:#C97C1F;
+    --t-audio-soft:#F6E9D6;
+    --t-doc:#146356;
+    --t-doc-soft:#DCEDE8;
+    --t-other:#5B6B67;
+    --t-other-soft:#E7EAE9;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(22,33,31,0.06), 0 4px 14px rgba(22,33,31,0.05);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0; height:100%;}
+  body{
+    background:var(--canvas);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    overflow:hidden;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+  button{font-family:inherit; cursor:pointer;}
+  input{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  /* ===== Top bar ===== */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 28px;
+    background:var(--surface-alt);
+    border-bottom:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .nav-left{display:flex; align-items:center; gap:6px;}
+  .nav-btn{
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    background:transparent; border:none;
+    padding:8px 16px; border-radius:var(--radius);
+    color:var(--ink);
+    transition:background .15s ease;
+  }
+  .nav-btn:hover{background:var(--accent-soft);}
+  .nav-btn svg{width:20px; height:20px; stroke:var(--ink); fill:none; stroke-width:1.6;}
+  .nav-btn span{font-size:12.5px; font-weight:500; color:var(--muted);}
+  .nav-right{display:flex; align-items:center; gap:16px;}
+  .page-label{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:20px; letter-spacing:.2px;}
+  .avatar{
+    width:42px; height:42px; border-radius:50%;
+    background:var(--accent-soft);
+    border:1.5px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; cursor:pointer; position:relative; flex-shrink:0;
+  }
+  .avatar svg{width:22px; height:22px; stroke:var(--accent); fill:none; stroke-width:1.6;}
+  .avatar img{width:100%; height:100%; object-fit:cover;}
+  .avatar-hint{
+    position:absolute; inset:0; background:rgba(20,99,86,0.55);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; transition:opacity .15s ease;
+  }
+  .avatar:hover .avatar-hint{opacity:1;}
+  .avatar-hint svg{width:16px; height:16px; stroke:#fff;}
+
+  /* ===== Layout ===== */
+  .layout{
+    display:flex;
+    gap:22px;
+    padding:18px 28px;
+    flex:1;
+    min-height:0;
+    overflow:hidden;
+  }
+  .panel-left{
+    flex:0 1 40%;
+    max-width:40%;
+    min-width:320px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    overflow-y:auto;
+  }
+  .panel-right{
+    flex:1 1 60%;
+    min-width:340px;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+
+  /* ===== Preview ===== */
+  .preview-box{
+    width:100%;
+    flex:1 1 auto;
+    min-height:140px;
+    max-height:38vh;
+    background:var(--surface-alt);
+    border:1px solid var(--line);
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    position:relative;
+  }
+  .preview-box img, .preview-box video{
+    width:100%; height:100%; object-fit:contain; background:#0F1614;
+  }
+  .preview-empty{
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    color:var(--muted);
+  }
+  .preview-empty svg{width:38px; height:38px; stroke:var(--muted); fill:none; stroke-width:1.4;}
+  .preview-empty span{font-size:13.5px;}
+  .preview-audio-wrap{
+    display:flex; flex-direction:column; align-items:center; gap:18px; width:80%;
+  }
+  .preview-audio-wrap svg{width:48px; height:48px; stroke:var(--t-audio); fill:none; stroke-width:1.4;}
+  .preview-audio-wrap audio{width:100%;}
+  .type-badge-lg{
+    width:74px; height:74px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .type-badge-lg svg{width:34px; height:34px; stroke-width:1.5; fill:none;}
+  .other-file-view{display:flex; flex-direction:column; align-items:center; gap:14px;}
+  .other-file-view .ext-label{
+    font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:500;
+    color:var(--muted); letter-spacing:.4px; text-transform:uppercase;
+  }
+
+  .preview-caption{
+    text-align:center; margin-top:10px; font-family:'Space Grotesk',sans-serif;
+    font-weight:600; font-size:14.5px; color:var(--ink);
+  }
+
+  .field{margin-top:12px; flex-shrink:0;}
+  .field label{
+    display:block; font-size:12px; font-weight:600; text-transform:uppercase;
+    letter-spacing:.5px; color:var(--muted); margin-bottom:6px;
+  }
+  .field-value{
+    width:100%; border:1px solid var(--line); border-radius:8px;
+    background:var(--surface-alt); padding:9px 12px;
+    font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--ink);
+    min-height:20px;
+  }
+  .tag-chip-row{display:flex; flex-wrap:wrap; gap:6px;}
+  .tag-chip{
+    display:inline-flex; align-items:center; gap:5px;
+    font-family:'JetBrains Mono',monospace; font-size:11.5px;
+    background:var(--surface); border:1px solid var(--line);
+    padding:4px 9px 4px 7px; border-radius:5px; color:var(--ink);
+  }
+  .tag-dot{width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0;}
+
+  .action-row{display:flex; gap:10px; margin-top:14px; flex-shrink:0;}
+  .btn-action{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:8px;
+    border-radius:8px; border:1px solid transparent; padding:11px 14px;
+    font-weight:600; font-size:14px; transition:filter .12s ease, transform .05s ease;
+  }
+  .btn-action:active{transform:translateY(1px);}
+  .btn-action svg{width:17px; height:17px; stroke-width:1.8; fill:none;}
+  .btn-download{background:var(--ok-soft); color:var(--ok); border-color:#BFE0CC;}
+  .btn-download:hover{filter:brightness(0.97);}
+  .btn-delete{background:var(--danger-soft); color:var(--danger); border-color:#EFC7C0;}
+  .btn-delete:hover{filter:brightness(0.97);}
+  .btn-action:disabled{opacity:.45; cursor:not-allowed;}
+
+  /* ===== Right: filter bar ===== */
+  .filter-bar{
+    display:flex; justify-content:flex-end; gap:10px; margin-bottom:14px; position:relative;
+    flex-shrink:0;
+  }
+  .dropdown{position:relative;}
+  .dropdown-btn{
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:8px; padding:9px 14px; font-size:13.5px; font-weight:500;
+    color:var(--ink); box-shadow:var(--shadow);
+  }
+  .dropdown-btn svg{width:15px; height:15px; stroke:var(--ink); fill:none; stroke-width:1.6;}
+  .dropdown-btn .chev{width:11px; height:11px; margin-left:2px; stroke:var(--muted);}
+  .dropdown-btn .count-badge{
+    background:var(--accent); color:#fff; font-size:10.5px; font-weight:700;
+    border-radius:20px; padding:1px 6px; font-family:'JetBrains Mono',monospace;
+  }
+  .dropdown-panel{
+    position:absolute; top:calc(100% + 8px); right:0; z-index:20;
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    box-shadow:0 8px 24px rgba(22,33,31,0.14); min-width:220px;
+    padding:8px; display:none;
+  }
+  .dropdown-panel.open{display:block;}
+  .sort-option{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 10px; border-radius:6px; font-size:13.5px; color:var(--ink);
+  }
+  .sort-option:hover{background:var(--surface-alt);}
+  .sort-option.active{color:var(--accent); font-weight:600;}
+  .sort-option svg{width:14px; height:14px; stroke:var(--accent); stroke-width:2; fill:none;}
+  .tag-option{
+    display:flex; align-items:center; gap:9px;
+    padding:8px 10px; border-radius:6px; font-size:13px;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .tag-option:hover{background:var(--surface-alt);}
+  .tag-option input{accent-color:var(--accent); width:14px; height:14px;}
+  .tag-panel-footer{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 10px 2px; margin-top:4px; border-top:1px solid var(--line);
+  }
+  .clear-link{background:none; border:none; color:var(--muted); font-size:12px; text-decoration:underline;}
+  .clear-link:hover{color:var(--danger);}
+
+  /* ===== File list ===== */
+  .file-list{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    flex:1 1 0;
+    min-height:0;
+    overflow-y:auto;
+  }
+  .file-row{
+    display:flex; align-items:center; gap:14px;
+    padding:12px 16px; border-bottom:1px solid var(--line);
+    background:var(--surface); text-align:left; width:100%; border-left:3px solid transparent;
+    transition:background .12s ease;
+  }
+  .file-row:last-child{border-bottom:none;}
+  .file-row:hover{background:var(--surface-alt);}
+  .file-row.selected{background:var(--accent-soft); border-left-color:var(--accent);}
+  .file-thumb{
+    width:56px; height:56px; border-radius:8px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .file-thumb img{width:100%; height:100%; object-fit:cover;}
+  .file-thumb svg{width:24px; height:24px; stroke-width:1.6; fill:none;}
+  .file-info{flex:1; min-width:0; text-align:left;}
+  .file-name{
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14.5px;
+    color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .file-tags{display:flex; flex-wrap:wrap; gap:5px; margin-top:6px;}
+  .file-date{
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);
+    flex-shrink:0; text-align:right; white-space:nowrap;
+  }
+  .empty-state{
+    padding:48px 20px; text-align:center; color:var(--muted); font-size:13.5px;
+  }
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; padding:11px 20px; border-radius:8px;
+    font-size:13.5px; font-weight:500; opacity:0; pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease; z-index:100;
+    box-shadow:0 8px 24px rgba(0,0,0,0.2);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  @media (max-width: 860px){
+    html,body{height:auto; overflow:auto;}
+    body{display:block;}
+    .layout{flex-direction:column; overflow:visible; height:auto; padding:16px;}
+    .panel-left{width:100%; max-width:none; flex:none; overflow-y:visible;}
+    .preview-box{max-height:none; aspect-ratio:4/3; flex:none;}
+    .panel-right{flex:none; min-height:0;}
+    .file-list{flex:none; max-height:60vh;}
+    .topbar{padding:12px 16px; flex-wrap:wrap; gap:10px;}
+    .nav-btn span{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="nav-left">
+    <button class="nav-btn" data-page="tag">
+      <svg viewBox="0 0 24 24"><path d="M20 12l-8 8-9-9V4h7l9 9z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg>
+      <span>Manage Tag</span>
+    </button>
+    <button class="nav-btn" data-page="import">
+      <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+      <span>Import File</span>
+    </button>
+    <button class="nav-btn" data-page="createtag">
+      <svg viewBox="0 0 24 24"><path d="M12 8v8M8 12h8"/><rect x="3" y="3" width="18" height="18" rx="4"/></svg>
+      <span>Create Tag</span>
+    </button>
+    <button class="nav-btn" data-page="settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg>
+      <span>Setting</span>
+    </button>
+  </div>
+  <div class="nav-right">
+    <span class="page-label">Home</span>
+    <div class="avatar" id="avatarBtn" title="เปลี่ยนรูปโปรไฟล์">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c1.2-3.6 4-5.4 7-5.4s5.8 1.8 7 5.4"/></svg>
+      <div class="avatar-hint"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>
+      <input type="file" id="avatarInput" accept="image/*" style="display:none;">
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- LEFT PANEL: PREVIEW -->
+  <div class="panel-left">
+    <div class="preview-box" id="previewBox">
+      <div class="preview-empty">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 15l-5-5-11 11"/></svg>
+        <span>เลือกไฟล์ทางด้านขวาเพื่อดูตัวอย่าง</span>
+      </div>
+    </div>
+    <div class="preview-caption" id="previewCaption"></div>
+
+    <div class="field">
+      <label>File Name</label>
+      <div class="field-value" id="fieldName">—</div>
+    </div>
+    <div class="field">
+      <label>File Tag</label>
+      <div class="field-value">
+        <div class="tag-chip-row" id="fieldTags"><span style="color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px;">—</span></div>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-action btn-download" id="btnDownload" disabled>
+        <svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+        Download
+      </button>
+      <button class="btn-action btn-delete" id="btnDelete" disabled>
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+        Delete
+      </button>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: LIST -->
+  <div class="panel-right">
+    <div class="filter-bar">
+      <div class="dropdown" id="sortDropdown">
+        <button class="dropdown-btn" id="sortBtn">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+          <span id="sortLabel">Sort</span>
+          <svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="dropdown-panel" id="sortPanel">
+          <div class="sort-option active" data-sort="date-desc">อัปโหลดล่าสุด</div>
+          <div class="sort-option" data-sort="date-asc">อัปโหลดเก่าสุด</div>
+          <div class="sort-option" data-sort="type">ตามประเภทไฟล์</div>
+          <div class="sort-option" data-sort="name">ชื่อไฟล์ (A-Z)</div>
+        </div>
+      </div>
+      <div class="dropdown" id="tagDropdown">
+        <button class="dropdown-btn" id="tagBtn">
+          <svg viewBox="0 0 24 24"><path d="M20 12l-8 8-9-9V4h7l9 9z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg>
+          <span>Search tag</span>
+          <span class="count-badge" id="tagCount" style="display:none;">0</span>
+          <svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="dropdown-panel" id="tagPanel">
+          <div id="tagOptionsList"></div>
+          <div class="tag-panel-footer">
+            <button class="clear-link" id="clearTags">ล้างตัวเลือก</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="file-list" id="fileList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ MOCK DATA ============ */
+function svgThumb(bg, fg, label){
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+    <rect width="200" height="200" fill="${bg}"/>
+    <circle cx="70" cy="70" r="18" fill="${fg}" opacity="0.85"/>
+    <path d="M0 150 L60 100 L110 140 L150 90 L200 150 L200 200 L0 200 Z" fill="${fg}" opacity="0.65"/>
+    <text x="100" y="185" font-family="monospace" font-size="16" fill="${fg}" text-anchor="middle" opacity="0.9">${label}</text>
+  </svg>`;
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+}
+
+const MOCK_FILES = [
+  { id:1, name:"sunset-lake-trip.jpg", type:"image", ext:"JPG",
+    tags:["ธรรมชาติ","ทริป2024"], date:"2026-07-28",
+    src: svgThumb("#E2EBF4","#3B6FA6","LAKE") },
+  { id:2, name:"team-offsite-group.png", type:"image", ext:"PNG",
+    tags:["ทีมงาน","กิจกรรม"], date:"2026-07-26",
+    src: svgThumb("#F6E9D6","#C97C1F","GROUP") },
+  { id:3, name:"product-demo-final.mp4", type:"video", ext:"MP4",
+    tags:["โปรดักต์","ดีโม"], date:"2026-07-24",
+    src: "https://www.w3schools.com/html/mov_bbb.mp4" },
+  { id:4, name:"interview-recording.mp3", type:"audio", ext:"MP3",
+    tags:["สัมภาษณ์","เสียง"], date:"2026-07-21",
+    src: "https://www.w3schools.com/html/horse.ogg" },
+  { id:5, name:"quarterly-report-q2.pdf", type:"document", ext:"PDF",
+    tags:["รายงาน","การเงิน"], date:"2026-07-19",
+    src:null },
+  { id:6, name:"brand-guideline-v3.png", type:"image", ext:"PNG",
+    tags:["แบรนด์","ดีไซน์"], date:"2026-07-15",
+    src: svgThumb("#DCEDE8","#146356","BRAND") },
+  { id:7, name:"onboarding-checklist.xlsx", type:"document", ext:"XLSX",
+    tags:["HR","เอกสาร"], date:"2026-07-12",
+    src:null },
+  { id:8, name:"mountain-hike-cover.jpg", type:"image", ext:"JPG",
+    tags:["ธรรมชาติ","ทริป2024"], date:"2026-07-08",
+    src: svgThumb("#E2EBF4","#3B6FA6","HIKE") },
+  { id:9, name:"archive-backup.zip", type:"other", ext:"ZIP",
+    tags:["สำรองข้อมูล"], date:"2026-07-03",
+    src:null },
+  { id:10, name:"podcast-ep12-raw.wav", type:"audio", ext:"WAV",
+    tags:["เสียง","พอดแคสต์"], date:"2026-06-29",
+    src: "https://www.w3schools.com/html/horse.ogg" },
+];
+
+const TYPE_META = {
+  image:    { color:"var(--t-image)",  soft:"var(--t-image-soft)",  icon:`<circle cx="8.5" cy="8.5" r="1.6"/><path d="M21 15l-5-5-11 11"/><rect x="3" y="3" width="18" height="18" rx="3"/>` },
+  video:    { color:"var(--t-video)",  soft:"var(--t-video-soft)",  icon:`<rect x="2" y="5" width="15" height="14" rx="2"/><path d="M17 9l5-3v12l-5-3z"/>` },
+  audio:    { color:"var(--t-audio)",  soft:"var(--t-audio-soft)",  icon:`<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>` },
+  document: { color:"var(--t-doc)",    soft:"var(--t-doc-soft)",    icon:`<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>` },
+  other:    { color:"var(--t-other)",  soft:"var(--t-other-soft)",  icon:`<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>` },
+};
+
+/* ============ STATE ============ */
+let files = JSON.parse(JSON.stringify(MOCK_FILES));
+let selectedId = null;
+let sortMode = "date-desc";
+let activeTags = new Set();
+
+/* ============ HELPERS ============ */
+function typeIconSVG(type, extraStyle){
+  const m = TYPE_META[type] || TYPE_META.other;
+  return `<svg viewBox="0 0 24 24" style="stroke:${m.color}; ${extraStyle||''}">${m.icon}</svg>`;
+}
+function allTags(){
+  const s = new Set();
+  files.forEach(f => f.tags.forEach(t => s.add(t)));
+  return Array.from(s).sort();
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._timer);
+  showToast._timer = setTimeout(()=> t.classList.remove('show'), 2200);
+}
+function fmtDate(d){
+  const dt = new Date(d);
+  return dt.toLocaleDateString('th-TH', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+/* ============ RENDER: FILE LIST ============ */
+function getVisibleFiles(){
+  let list = files.slice();
+  if(activeTags.size > 0){
+    list = list.filter(f => f.tags.some(t => activeTags.has(t)));
+  }
+  switch(sortMode){
+    case "date-desc": list.sort((a,b)=> new Date(b.date)-new Date(a.date)); break;
+    case "date-asc":  list.sort((a,b)=> new Date(a.date)-new Date(b.date)); break;
+    case "type":      list.sort((a,b)=> a.type.localeCompare(b.type) || a.name.localeCompare(b.name)); break;
+    case "name":      list.sort((a,b)=> a.name.localeCompare(b.name)); break;
+  }
+  return list;
+}
+
+function renderFileList(){
+  const container = document.getElementById('fileList');
+  const list = getVisibleFiles();
+  if(list.length === 0){
+    container.innerHTML = `<div class="empty-state">ไม่พบไฟล์ที่ตรงกับตัวกรองที่เลือก</div>`;
+    return;
+  }
+  container.innerHTML = list.map(f => {
+    const m = TYPE_META[f.type] || TYPE_META.other;
+    const thumbInner = (f.type === "image")
+      ? `<img src="${f.src}" alt="">`
+      : typeIconSVG(f.type);
+    return `
+    <button class="file-row ${f.id===selectedId?'selected':''}" data-id="${f.id}">
+      <div class="file-thumb" style="background:${m.soft};">${thumbInner}</div>
+      <div class="file-info">
+        <div class="file-name">${escapeHtml(f.name)}</div>
+        <div class="file-tags">
+          ${f.tags.map(t => `<span class="tag-chip"><span class="tag-dot"></span>${escapeHtml(t)}</span>`).join('')}
+        </div>
+      </div>
+      <div class="file-date">${fmtDate(f.date)}</div>
+    </button>`;
+  }).join('');
+
+  container.querySelectorAll('.file-row').forEach(row=>{
+    row.addEventListener('click', ()=> selectFile(parseInt(row.dataset.id,10)));
+  });
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ============ PREVIEW ============ */
+function selectFile(id){
+  selectedId = id;
+  renderFileList();
+  renderPreview();
+}
+
+function renderPreview(){
+  const box = document.getElementById('previewBox');
+  const caption = document.getElementById('previewCaption');
+  const fieldName = document.getElementById('fieldName');
+  const fieldTags = document.getElementById('fieldTags');
+  const btnDownload = document.getElementById('btnDownload');
+  const btnDelete = document.getElementById('btnDelete');
+
+  const f = files.find(x => x.id === selectedId);
+
+  if(!f){
+    box.innerHTML = `<div class="preview-empty">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 15l-5-5-11 11"/></svg>
+        <span>เลือกไฟล์ทางด้านขวาเพื่อดูตัวอย่าง</span>
+      </div>`;
+    caption.textContent = "";
+    fieldName.textContent = "—";
+    fieldTags.innerHTML = `<span style="color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px;">—</span>`;
+    btnDownload.disabled = true;
+    btnDelete.disabled = true;
+    return;
+  }
+
+  const m = TYPE_META[f.type] || TYPE_META.other;
+
+  if(f.type === "image"){
+    box.innerHTML = `<img src="${f.src}" alt="${escapeHtml(f.name)}">`;
+  } else if(f.type === "video"){
+    box.innerHTML = `<video src="${f.src}" controls playsinline></video>`;
+  } else if(f.type === "audio"){
+    box.innerHTML = `<div class="preview-audio-wrap">
+        <svg viewBox="0 0 24 24">${m.icon}</svg>
+        <audio src="${f.src}" controls style="width:100%;"></audio>
+      </div>`;
+  } else {
+    box.innerHTML = `<div class="other-file-view">
+        <div class="type-badge-lg" style="background:${m.soft};">
+          <svg viewBox="0 0 24 24" style="stroke:${m.color};">${m.icon}</svg>
+        </div>
+        <div class="ext-label">.${f.ext} FILE</div>
+      </div>`;
+  }
+
+  caption.textContent = f.name;
+  fieldName.textContent = f.name;
+  fieldTags.innerHTML = f.tags.map(t => `<span class="tag-chip"><span class="tag-dot"></span>${escapeHtml(t)}</span>`).join('');
+  btnDownload.disabled = false;
+  btnDelete.disabled = false;
+}
+
+/* ============ ACTIONS ============ */
+document.getElementById('btnDownload').addEventListener('click', ()=>{
+  const f = files.find(x => x.id === selectedId);
+  if(!f) return;
+  if(f.src){
+    const a = document.createElement('a');
+    a.href = f.src;
+    a.download = f.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showToast(`กำลังดาวน์โหลด "${f.name}"`);
+  } else {
+    showToast(`"${f.name}" ยังไม่มีข้อมูลไฟล์จริงในโหมดทดลองนี้`);
+  }
+});
+
+document.getElementById('btnDelete').addEventListener('click', ()=>{
+  const f = files.find(x => x.id === selectedId);
+  if(!f) return;
+  if(!confirm(`ต้องการลบไฟล์ "${f.name}" ใช่หรือไม่?`)) return;
+  files = files.filter(x => x.id !== f.id);
+  selectedId = null;
+  renderFileList();
+  renderPreview();
+  renderTagOptions();
+  showToast(`ลบไฟล์ "${f.name}" แล้ว`);
+});
+
+/* ============ SORT DROPDOWN ============ */
+const sortBtn = document.getElementById('sortBtn');
+const sortPanel = document.getElementById('sortPanel');
+const sortLabel = document.getElementById('sortLabel');
+const SORT_LABELS = {
+  "date-desc":"Sort: ล่าสุด", "date-asc":"Sort: เก่าสุด", "type":"Sort: ประเภท", "name":"Sort: ชื่อ"
+};
+sortBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  closeAllDropdowns(sortPanel);
+  sortPanel.classList.toggle('open');
+});
+sortPanel.querySelectorAll('.sort-option').forEach(opt=>{
+  opt.addEventListener('click', ()=>{
+    sortMode = opt.dataset.sort;
+    sortLabel.textContent = SORT_LABELS[sortMode];
+    sortPanel.querySelectorAll('.sort-option').forEach(o=>o.classList.remove('active'));
+    opt.classList.add('active');
+    sortPanel.classList.remove('open');
+    renderFileList();
+  });
+});
+
+/* ============ TAG DROPDOWN ============ */
+const tagBtn = document.getElementById('tagBtn');
+const tagPanel = document.getElementById('tagPanel');
+const tagCount = document.getElementById('tagCount');
+
+function renderTagOptions(){
+  const list = document.getElementById('tagOptionsList');
+  const tags = allTags();
+  list.innerHTML = tags.map(t => `
+    <label class="tag-option">
+      <input type="checkbox" value="${escapeHtml(t)}" ${activeTags.has(t)?'checked':''}>
+      <span>${escapeHtml(t)}</span>
+    </label>`).join('') || `<div style="padding:10px; color:var(--muted); font-size:12.5px;">ไม่มีแท็ก</div>`;
+
+  list.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      if(cb.checked) activeTags.add(cb.value); else activeTags.delete(cb.value);
+      updateTagCount();
+      renderFileList();
+    });
+  });
+}
+function updateTagCount(){
+  if(activeTags.size > 0){
+    tagCount.style.display = 'inline-block';
+    tagCount.textContent = activeTags.size;
+  } else {
+    tagCount.style.display = 'none';
+  }
+}
+tagBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  closeAllDropdowns(tagPanel);
+  tagPanel.classList.toggle('open');
+});
+document.getElementById('clearTags').addEventListener('click', ()=>{
+  activeTags.clear();
+  renderTagOptions();
+  updateTagCount();
+  renderFileList();
+});
+
+function closeAllDropdowns(except){
+  [sortPanel, tagPanel].forEach(p => { if(p !== except) p.classList.remove('open'); });
+}
+document.addEventListener('click', ()=> closeAllDropdowns(null));
+
+/* ============ TOP NAV (placeholder pages) ============ */
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const names = { tag:"Manage Tag", import:"Import File", createtag:"Create Tag", settings:"Setting" };
+    showToast(`หน้า "${names[btn.dataset.page]}" ยังไม่เปิดใช้งานในตัวอย่างนี้`);
+  });
+});
+
+/* ============ AVATAR UPLOAD ============ */
+const avatarBtn = document.getElementById('avatarBtn');
+const avatarInput = document.getElementById('avatarInput');
+avatarBtn.addEventListener('click', ()=> avatarInput.click());
+avatarInput.addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    avatarBtn.innerHTML = `<img src="${ev.target.result}" alt="Profile">
+      <div class="avatar-hint"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>`;
+    avatarBtn.appendChild(avatarInput);
+  };
+  reader.readAsDataURL(file);
+});
+
+/* ============ INIT ============ */
+renderTagOptions();
+renderFileList();
+renderPreview();
+</script>
+</body>
+</html>

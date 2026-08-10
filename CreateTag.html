@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Responsive - CreateTag (Human-Commented)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --canvas:#F3F5F4;
+            --surface:#FFFFFF;
+            --surface-alt:#FAFBFA;
+            --ink:#16211F;
+            --muted:#5B6B67;
+            --line:#DDE3E0;
+            --accent:#146356;
+            --accent-soft:#DCEDE8;
+            --radius:10px;
+            --shadow:0 1px 2px rgba(22,33,31,0.06), 0 4px 14px rgba(22,33,31,0.05);
+        }
+
+        /* --- 1. ตั้งค่าเริ่มต้นให้หน้าเว็บ --- */
+        * {
+            box-sizing: border-box;
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* หน้าเว็บเต็มจอ ไม่มี scroll รวม (เนื้อหาด้านในเลื่อนเองถ้ายาวเกิน) */
+        html, body { height: 100%; }
+        body {
+            background-color: var(--canvas);
+            color: var(--ink);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- 2. กรอบหลักของแอป (เต็มจอ) --- */
+        .container {
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            background-color: var(--canvas);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- 3. ส่วนหัว (Topbar) — ให้ตรงกับหน้าอื่นๆ --- */
+        .header {
+            background-color: var(--surface-alt);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 28px;
+            border-bottom: 1px solid var(--line);
+            flex-shrink: 0;
+        }
+
+        .nav-menu { display: flex; align-items: center; gap: 6px; }
+        .header-right { display: flex; align-items: center; gap: 16px; }
+        .header-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: .2px;
+            margin-right: 0;
+            color: var(--ink);
+        }
+
+        .profile-icon {
+            width: 42px; height: 42px;
+            background-color: var(--accent-soft);
+            border-radius: 50%;
+            border: 1.5px solid var(--line);
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .profile-icon svg{ width:22px; height:22px; stroke:var(--accent); fill:none; stroke-width:1.6; }
+
+        /* ไอคอนเมนูต่างๆ */
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center; gap:4px;
+            font-size: 12.5px; font-weight: 500; color: var(--muted);
+            cursor: pointer; padding: 8px 16px; border-radius: var(--radius);
+            transition: background .15s ease;
+        }
+        .nav-item:hover{ background-color: var(--accent-soft); }
+        .icon-box {
+            width: 20px; height: 20px;
+            border: none; background-color: transparent;
+            display: flex; justify-content: center; align-items: center;
+            margin-bottom: 0; border-radius: 0;
+        }
+        .icon-box svg{ width:20px; height:20px; stroke:var(--ink); fill:none; stroke-width:1.6; }
+
+        /* --- 4. พื้นที่เนื้อหาหลัก (Content) --- */
+        .content {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 24px 40px 40px 40px;
+            display: flex; flex-direction: column;
+        }
+
+        /* กล่องนับจำนวนแท็ก (Total Tag) */
+        .total-tag-container { display: flex; justify-content: flex-end; margin-bottom: 20px; width: 100%; max-width: 1100px; margin-left: auto; margin-right: auto; }
+        .total-tag-box {
+            background-color: #d9d9d9; border: 1px solid #333;
+            padding: 5px 15px; font-size: 12px; border-radius: 4px;
+        }
+
+        /* เลย์เอาต์แบ่งซ้าย-ขวาบนคอม */
+        .main-layout { display: flex; flex-direction: row; gap: 40px; margin-bottom: 40px; width: 100%; max-width: 1100px; margin-left: auto; margin-right: auto; }
+
+        /* ฝั่งซ้าย: พิมพ์ชื่อและดูตัวอย่าง */
+        .left-col { flex: 1; display: flex; flex-direction: column; align-items: center; }
+        .input-group { display: flex; align-items: center; gap: 10px; width: 100%; margin-bottom: 40px; }
+        .input-group label { font-size: 16px; white-space: nowrap; }
+        .input-group input[type="text"] {
+            flex-grow: 1; height: 35px; background-color: #d9d9d9;
+            border: 1px solid #333; border-radius: 8px; padding: 0 10px;
+            font-size: 16px; outline: none;
+        }
+
+        /* วงกลมพรีวิวตัวอย่าง */
+        .preview-circle {
+            width: 150px; height: 150px; background-color: #d9d9d9;
+            border-radius: 50%; margin-bottom: 15px;
+            transition: background-color 0.3s; border: 2px solid transparent;
+        }
+        .preview-text { font-size: 16px; }
+
+        /* ฝั่งขวา: กล่องเลือกสี */
+        .right-col { flex: 1; }
+        .color-tag-box {
+            width: 100%; height: 300px; background-color: #d9d9d9;
+            border: 1px solid #333; border-radius: 12px;
+            display: flex; flex-direction: column; padding: 20px;
+        }
+        .color-tag-box span { font-size: 18px; margin-bottom: 15px; text-align: center; font-weight: bold; }
+
+        /* จานสีสำเร็จรูป (กดเลือกไวๆ) */
+        .color-swatches { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 25px; }
+        .swatch {
+            width: 35px; height: 35px; border-radius: 50%; cursor: pointer;
+            border: 2px solid transparent; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.1s, border-color 0.2s;
+        }
+        .swatch.active { border-color: #333; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #333; } /* ไฮไลท์เมื่อถูกเลือก */
+
+        /* เลือกสีแบบผสมเอง */
+        .custom-color-area {
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            border-top: 1px solid #bbb; padding-top: 15px;
+        }
+        .custom-color-row { display: flex; align-items: center; gap: 10px; }
+        .custom-color-area label { font-size: 14px; }
+        input[type="color"] { width: 50px; height: 40px; cursor: pointer; border: 1px solid #999; border-radius: 4px; padding: 2px; }
+        #hex-display { width: 80px; height: 30px; text-align: center; border: 1px solid #999; border-radius: 4px; outline: none; }
+
+        /* --- 5. ปุ่มแอคชัน (ลบ / สร้าง) --- */
+        .actions { display: flex; justify-content: center; gap: 30px; margin-bottom: 30px; }
+        .actions button {
+            width: 120px; height: 35px; background-color: #d9d9d9;
+            border: 1px solid #333; border-radius: 4px; font-size: 16px; cursor: pointer;
+        }
+        /* เปลี่ยนสีปุ่มลบเมื่อมีแท็กถูกเลือก */
+        #btn-delete.active-delete { background-color: #ffcccc; border-color: #cc0000; color: #cc0000; }
+
+        /* --- 6. พื้นที่แสดงแท็กที่สร้างเสร็จแล้ว --- */
+        .tags-display-area { border-top: 1px solid #ccc; padding-top: 20px; width: 100%; max-width: 1100px; margin-left: auto; margin-right: auto; }
+        .tags-display-area h3 { font-size: 16px; margin-bottom: 15px; color: #555; }
+        .tags-list { display: flex; flex-wrap: wrap; gap: 15px; }
+
+        /* สไตล์ของแต่ละแท็กที่ถูกสร้าง */
+        .created-tag-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 16px; background-color: #f0f0f0; border: 2px solid #ccc;
+            border-radius: 20px; font-size: 14px; cursor: pointer;
+        }
+        /* เมื่อแท็กโดนคลิกเลือก */
+        .created-tag-item.selected { border-color: #333; background-color: #e0e0e0; }
+        .created-tag-color { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #999; }
+        .check-icon { display: none; color: #28a745; font-weight: bold; margin-left: 5px; }
+        .created-tag-item.selected .check-icon { display: inline; } /* โชว์ติ๊กถูกเมื่อเลือก */
+
+
+        /* ==========================================
+           📱 ส่วนสำหรับหน้าจอมือถือ (กว้างไม่เกิน 768px)
+           ========================================== */
+        @media (max-width: 860px) {
+            html, body { height: auto; overflow: auto; }
+            body { display: block; }
+            .container { display: block; }
+
+            /* จัด Header ใหม่ให้เมนูเลื่อนซ้ายขวาได้ */
+            .header { flex-wrap: wrap; padding: 12px 16px; gap: 10px; }
+            .nav-item span { display: none; }
+
+            /* เมนูใช้นิ้วปัดซ้ายขวา (ซ่อน Scrollbar) */
+            .nav-menu {
+                overflow-x: auto; justify-content: flex-start; gap: 8px;
+                -ms-overflow-style: none; scrollbar-width: none;
+            }
+            .nav-menu::-webkit-scrollbar { display: none; }
+
+            /* ปรับพื้นที่ส่วนกลางให้ใช้นิ้วไถขึ้นลงได้ */
+            .content { overflow-y: visible; padding: 20px; }
+
+            /* เปลี่ยน Layout ซ้ายขวา เป็นบนล่างซ้อนกัน */
+            .main-layout { flex-direction: column; gap: 30px; }
+            .input-group { flex-direction: column; align-items: flex-start; margin-bottom: 20px; }
+            .input-group input[type="text"] { width: 100%; height: 44px; } /* ขยายช่องพิมพ์ให้กดง่าย */
+            
+            .color-tag-box { height: auto; } /* ให้กล่องสีปรับความสูงตามจอ */
+            
+            /* ขยายปุ่มให้กดง่ายเต็มจอ */
+            .actions button { flex: 1; height: 48px; font-weight: bold; border-radius: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- โครงสร้างหลัก (เหมือนเดิม ไม่ได้แก้ HTML) -->
+    <div class="container">
+        <!-- แถบด้านบน (Header) -->
+        <div class="header">
+            <div class="nav-menu">
+                <div class="nav-item"><div class="icon-box"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></div><span>Home</span></div>
+                <div class="nav-item"><div class="icon-box"><svg viewBox="0 0 24 24"><path d="M20 12l-8 8-9-9V4h7l9 9z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg></div><span>Manage Tag</span></div>
+                <div class="nav-item"><div class="icon-box"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div><span>Import File</span></div>
+                <div class="nav-item"><div class="icon-box"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg></div><span>Setting</span></div>
+            </div>
+            <div class="header-right">
+                <div class="header-title">Create Tag</div>
+                <div class="profile-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c1.2-3.6 4-5.4 7-5.4s5.8 1.8 7 5.4"/></svg></div>
+            </div>
+        </div>
+
+        <!-- เนื้อหาหลัก (Content) -->
+        <div class="content">
+            <div class="total-tag-container">
+                <div class="total-tag-box">Total tag : <span id="tag-count">0</span></div>
+            </div>
+
+            <div class="main-layout">
+                <!-- พิมพ์ชื่อ -->
+                <div class="left-col">
+                    <div class="input-group">
+                        <label>Name Tag</label>
+                        <input type="text" id="tag-name-input" placeholder="Type name here...">
+                    </div>
+                    <div class="preview-circle" id="preview-circle"></div>
+                    <div class="preview-text" id="preview-text">Name Tag</div>
+                </div>
+
+                <!-- เลือกสี -->
+                <div class="right-col">
+                    <div class="color-tag-box">
+                        <span>Color Tag</span>
+                        <div class="color-swatches" id="swatch-container">
+                            <div class="swatch active" data-color="#d9d9d9" style="background-color: #d9d9d9;"></div>
+                            <div class="swatch" data-color="#ff4d4f" style="background-color: #ff4d4f;"></div>
+                            <div class="swatch" data-color="#ff9c6e" style="background-color: #ff9c6e;"></div>
+                            <div class="swatch" data-color="#ffc53d" style="background-color: #ffc53d;"></div>
+                            <div class="swatch" data-color="#73d13d" style="background-color: #73d13d;"></div>
+                            <div class="swatch" data-color="#36cfc9" style="background-color: #36cfc9;"></div>
+                            <div class="swatch" data-color="#4096ff" style="background-color: #4096ff;"></div>
+                            <div class="swatch" data-color="#9254de" style="background-color: #9254de;"></div>
+                            <div class="swatch" data-color="#f759ab" style="background-color: #f759ab;"></div>
+                            <div class="swatch" data-color="#000000" style="background-color: #000000;"></div>
+                        </div>
+                        <div class="custom-color-area">
+                            <label>Or Custom Color</label>
+                            <div class="custom-color-row">
+                                <input type="color" id="tag-color-input" value="#d9d9d9">
+                                <input type="text" id="hex-display" value="#d9d9d9" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ปุ่มกดยืนยัน/ลบ -->
+            <div class="actions">
+                <button id="btn-delete">Delete Selected</button>
+                <button id="btn-create">Create</button>
+            </div>
+
+            <!-- ลานแสดงแท็ก -->
+            <div class="tags-display-area">
+                <h3>Created Tags (Click/Tap to select)</h3>
+                <div class="tags-list" id="tags-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         ส่วนประมวลผลการทำงาน (JavaScript) 
+         ========================================== -->
+    <script>
+        // 1. ดึงของบนหน้าจอมาเตรียมไว้ใช้งาน (เช่น กล่องข้อความ, รูปวงกลม)
+        const tagCountDisplay = document.getElementById('tag-count');
+        const nameInput = document.getElementById('tag-name-input');
+        const previewText = document.getElementById('preview-text');
+        const previewCircle = document.getElementById('preview-circle');
+        
+        const colorInput = document.getElementById('tag-color-input');
+        const hexDisplay = document.getElementById('hex-display');
+        const swatches = document.querySelectorAll('.swatch');
+        
+        const btnCreate = document.getElementById('btn-create');
+        const btnDelete = document.getElementById('btn-delete');
+        const tagsListContainer = document.getElementById('tags-list');
+
+        let createdTagsCount = 0; // ตัวแปรนับว่าสร้างไปกี่แท็กแล้ว
+        let currentColor = '#d9d9d9'; // สีเริ่มต้น (สีเทา)
+
+        // 2. เมื่อพิมพ์ข้อความปุ๊บ ให้ชื่อใต้ตัวอย่างเปลี่ยนตามปั๊บ (แบบเรียลไทม์)
+        nameInput.addEventListener('input', function(e) {
+            const val = e.target.value.trim();
+            previewText.textContent = val !== '' ? val : 'Name Tag';
+        });
+
+        // 3. ฟังก์ชันอัปเดตสีตัวอย่าง เมื่อมีการจิ้มเปลี่ยนสี
+        function changeColor(newColor) {
+            currentColor = newColor;
+            previewCircle.style.backgroundColor = currentColor;
+            colorInput.value = currentColor;
+            hexDisplay.value = currentColor;
+        }
+
+        // 4. เมื่อเลือกสีเองผ่าน Color Picker (วงล้อสี)
+        colorInput.addEventListener('input', function(e) {
+            changeColor(e.target.value);
+            // ยกเลิกไฮไลท์จากสีสำเร็จรูป เพราะเราผสมสีเองแล้ว
+            swatches.forEach(s => s.classList.remove('active'));
+        });
+
+        // 5. เมื่อกดเลือกสีจากจานสีสำเร็จรูป (Swatches)
+        swatches.forEach(swatch => {
+            swatch.addEventListener('click', function() {
+                // ล้างไฮไลท์อันเก่าออก
+                swatches.forEach(s => s.classList.remove('active'));
+                // ไฮไลท์อันที่เพิ่งกด
+                this.classList.add('active');
+                // เปลี่ยนสี
+                changeColor(this.getAttribute('data-color'));
+            });
+        });
+
+        // 6. ฟังก์ชันเมื่อกดคลิกที่แท็กด้านล่าง (เพื่อเลือกไว้เตรียมลบ)
+        function toggleTagSelection(event) {
+            const tagItem = event.currentTarget;
+            tagItem.classList.toggle('selected'); // ใส่-ถอด สีเข้มและติ๊กถูก
+            updateDeleteButtonState(); // เช็คว่าต้องเปลี่ยนข้อความปุ่มลบไหม
+        }
+
+        // 7. ฟังก์ชันเปลี่ยนข้อความปุ่ม Delete (เช่น โชว์ว่า Delete (2))
+        function updateDeleteButtonState() {
+            const selectedTags = tagsListContainer.querySelectorAll('.created-tag-item.selected');
+            if (selectedTags.length > 0) {
+                btnDelete.classList.add('active-delete'); // ทำปุ่มสีแดง
+                btnDelete.textContent = `Delete (${selectedTags.length})`; // บอกจำนวน
+            } else {
+                btnDelete.classList.remove('active-delete');
+                btnDelete.textContent = 'Delete Selected';
+            }
+        }
+
+        // 8. กดปุ่ม Create (สร้างแท็ก)
+        btnCreate.addEventListener('click', function() {
+            const tagName = nameInput.value.trim();
+
+            if(tagName === '') {
+                alert('กรุณากรอกชื่อ Name Tag ก่อนทำการ Create');
+                return;
+            }
+            
+            // สร้างกล่องแท็กอันใหม่
+            const newTagItem = document.createElement('div');
+            newTagItem.classList.add('created-tag-item');
+            newTagItem.innerHTML = `
+                <div class="created-tag-color" style="background-color: ${currentColor};"></div>
+                <span>${tagName}</span>
+                <span class="check-icon">✓</span>
+            `;
+
+            // ทำให้แท็กใหม่คลิกเลือกได้
+            newTagItem.addEventListener('click', toggleTagSelection);
+            
+            // เอาแท็กใหม่ไปแปะไว้ด้านล่างจอ
+            tagsListContainer.appendChild(newTagItem);
+
+            // อัปเดตตัวเลขรวมและล้างหน้าฟอร์ม
+            updateTotalTags();
+            resetForm();
+            
+            // ฟีเจอร์แถม: เลื่อนจอลงมาดูล่าสุดอัตโนมัติบนมือถือ
+            if (window.innerWidth <= 768) {
+                const contentDiv = document.querySelector('.content');
+                contentDiv.scrollTop = contentDiv.scrollHeight;
+            }
+        });
+
+        // 9. กดปุ่ม Delete (ลบเฉพาะอันที่เลือก)
+        btnDelete.addEventListener('click', function() {
+            const selectedTags = tagsListContainer.querySelectorAll('.created-tag-item.selected');
+            
+            if (selectedTags.length === 0) {
+                alert('กรุณาเลือกแท็กที่ต้องการลบด้านล่างก่อนครับ');
+                return;
+            }
+
+            if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบแท็กที่เลือกทั้ง ${selectedTags.length} แท็ก?`)) {
+                // วนลูปเตะแท็กที่ถูกเลือกออกจากหน้าจอทีละอัน
+                selectedTags.forEach(tag => {
+                    tagsListContainer.removeChild(tag);
+                });
+                
+                // อัปเดตตัวเลขรวมและปุ่มให้กลับเป็นปกติ
+                updateTotalTags();
+                updateDeleteButtonState();
+            }
+        });
+
+        // 10. ฟังก์ชันอัปเดตตัวเลข Total tag ให้เป็นปัจจุบัน
+        function updateTotalTags() {
+            createdTagsCount = tagsListContainer.children.length;
+            tagCountDisplay.textContent = createdTagsCount;
+        }
+
+        // 11. ฟังก์ชันล้างค่าฟอร์มกลับเป็นสีเทาและว่างเปล่า (หลังกด Create)
+        function resetForm() {
+            nameInput.value = '';
+            previewText.textContent = 'Name Tag';
+            changeColor('#d9d9d9');
+            
+            swatches.forEach(s => s.classList.remove('active'));
+            swatches[0].classList.add('active'); // เลือกสีเทาตัวแรกให้เป็น Active 
+        }
+    </script>
+</body>
+</html>

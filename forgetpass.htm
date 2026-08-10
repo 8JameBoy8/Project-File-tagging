@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forget Password</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .header {
+            background-color: #f2f2f2;
+            width: 100%;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 30px;
+        }
+
+        .header h1 {
+            color: #000000;
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .avatar-circle {
+            width: 100px;
+            height: 100px;
+            background-color: #d6e8f5;
+            border-radius: 50%;
+            position: relative;
+            margin: 20px auto;
+        }
+
+        .avatar-circle i {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 45px;
+            color: #1a1a1a;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        form {
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+            margin: 0 auto;
+        }
+
+        /* --- label อยู่กึ่งกลางเหนือกล่อง --- */
+        form label {
+            display: block;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+
+        /* --- ตัวกล่อง input ไม่ยืดเต็ม form แล้ว แต่กำหนดความกว้างคงที่ + จัดกึ่งกลาง --- */
+        form input[type="text"],
+        form input[type="password"] {
+            width: 100%;
+            max-width: 260px;      /* กล่องไม่ยืดเกินความกว้างนี้ */
+            display: block;
+            margin: 0 auto 16px auto;  /* จัดกึ่งกลางแนวนอน */
+            padding: 12px;
+            font-size: 16px;
+            text-align: left;    /* ตัวหนังสือที่พิมพ์อยู่ขวากล่อง */
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        form input[type="submit"] {
+            width: 100%;
+            max-width: 260px;      /* ปุ่มกว้างเท่ากับกล่อง input */
+            display: block;
+            margin: 0 auto;
+            padding: 14px;
+            font-size: 16px;
+            background-color: #1a73e8;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        form input[type="submit"]:hover {
+            background-color: #1558b0;
+        }
+
+        .login-links {
+            text-align: center;
+        }
+
+        .login-links a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+
+        .login-links a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 400px) {
+            .header {
+                height: 56px;
+                padding-right: 16px;
+            }
+
+            .header h1 {
+                font-size: 1.2rem;
+            }
+
+            .avatar-circle {
+                width: 80px;
+                height: 80px;
+            }
+
+            .avatar-circle i {
+                font-size: 36px;
+            }
+
+            form input[type="text"],
+            form input[type="password"],
+            form input[type="submit"] {
+                max-width: 220px;  /* จอเล็กมากๆ ก็ยังกึ่งกลาง ไม่เต็มจอ */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Forget Password</h1>
+    </div>
+
+    <div class="avatar-circle">
+        <i class="fa-solid fa-user"></i>
+    </div>
+
+    <h2>Forget Password</h2>
+
+    <form>
+        <label for="Gmail">Gmail:</label>
+        <input type="text" id="Gmail" name="Gmail" required>
+
+        <input type="submit" value="Confirm">
+    </form>
+</body>
+</html>
