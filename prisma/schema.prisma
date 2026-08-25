@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String   @default("#d9d9d9")
+  createdAt DateTime @default(now())
+  files     FileTag[]
+}
+
+model File {
+  id         String   @id @default(cuid())
+  name       String
+  type       String          // image, video, audio, document, other
+  ext        String
+  path       String          // เส้นทางไฟล์ใน /uploads
+  size       Int
+  uploadedAt DateTime @default(now())
+  tags       FileTag[]
+}
+
+model FileTag {
+  file      File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  fileId    String
+  tag       Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId     String
+
+  @@id([fileId, tagId])
+}
