@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { v4 as uuidv4 } from 'uuid'
 import fs from 'fs'
 import path from 'path'
@@ -14,12 +15,12 @@ export async function GET(request: Request) {
     const untagged = searchParams.get('untagged') === 'true'
 
     try {
-        let orderBy: any = { uploadedAt: 'desc' }
+        let orderBy: Prisma.FileOrderByWithRelationInput | Prisma.FileOrderByWithRelationInput[] = { uploadedAt: 'desc' }
         if (sort === 'date-asc') orderBy = { uploadedAt: 'asc' }
         if (sort === 'type') orderBy = [{ type: 'asc' }, { name: 'asc' }]
         if (sort === 'name') orderBy = { name: 'asc' }
 
-        let where: any = {}
+        const where: Prisma.FileWhereInput = {}
         if (untagged) {
             where.tags = { none: {} }
         } else if (tagIds.length > 0) {
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
         const fileExt = getFileExtension(originalName)
 
         // Handle tags (assuming JSON array of tag IDs)
-        let tagsData: any[] = []
+        let tagsData: Prisma.FileTagCreateWithoutFileInput[] = []
         if (tagsParam) {
             try {
                 const parsedTags = JSON.parse(tagsParam)

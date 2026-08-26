@@ -52,16 +52,19 @@ export default function ManageTagPage() {
     }
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing with an external system (the API) on mount, not deriving state from props/state
         fetchTags()
     }, [])
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing with an external system (the API) when sort/filter changes, not deriving state from props/state
         fetchFiles()
     }, [sortMode, activeTags])
 
     useEffect(() => {
         const t = tags.find(x => x.id === selectedTagId)
         if (t) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the edit form to match the newly selected tag; the fields then diverge as the user types
             setEditName(t.name)
             setEditColor(t.color)
         } else {

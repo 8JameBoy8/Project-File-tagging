@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export async function PUT(
     request: Request,
@@ -19,9 +20,9 @@ export async function PUT(
         })
 
         return NextResponse.json(updatedTag)
-    } catch (error: any) {
+    } catch (error) {
         console.error('Failed to update tag', error)
-        if (error.code === 'P2002') {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
             return NextResponse.json({ error: 'Tag name already used' }, { status: 400 })
         }
         return NextResponse.json({ error: 'Failed to update tag' }, { status: 500 })

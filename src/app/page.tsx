@@ -38,10 +38,12 @@ export default function HomePage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing with an external system (the API) on mount, not deriving state from props/state
     fetchTags()
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing with an external system (the API) when sort/filter changes, not deriving state from props/state
     fetchFiles()
   }, [sortMode, activeTags])
 
