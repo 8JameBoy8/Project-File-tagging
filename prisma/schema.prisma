@@ -42,7 +42,6 @@ model User {
   isVerified    Boolean   @default(false)
   displayName   String?   // nameshow
   avatarUrl     String?   // pf
-  language     Language  @default(TH)
   createdAt     DateTime  @default(now())
   updateAt      DateTime  @updatedAt
   deletedAt     DateTime?
