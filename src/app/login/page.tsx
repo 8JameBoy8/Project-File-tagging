@@ -33,8 +33,16 @@ export default function LoginPage() {
           </div>
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <InputField label="Gmail" type="email" placeholder="Example@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            <InputField label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            <AuthButton text="Login" />
+            <InputField 
+              label="Password" 
+              type="password" 
+              placeholder="••••••••" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+              maxLength={8} 
+              minLength={8} 
+            />
           </form>
           <div className="flex justify-between w-full mt-6 pt-6 border-t border-gray-100 text-sm">
             <Link href="/register" className="text-blue-500 hover:text-blue-700 font-medium transition-colors">Register?</Link>
