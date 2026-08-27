@@ -1,30 +1,14 @@
 {
-  "name": "archive-app",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
   "dependencies": {
-    "@libsql/client": "^0.17.4",
-    "@prisma/adapter-libsql": "^7.9.1",
-    "@prisma/client": "^7.9.1",
-    "next": "16.3.1",
-    "prisma": "^7.9.1",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "uuid": "^14.0.2"
+    "@prisma/extension-accelerate": "^3.0.1",
+    "bcryptjs": "^3.0.3",
+    "bullmq": "^6.3.1",
+    "cloudinary": "^2.10.1",
+    "ioredis": "^6.0.0",
+    "jose": "^6.2.10",
+    "resend": "^6.24.0"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@types/uuid": "^10.0.0",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.1",
-    "typescript": "^5"
+    "@types/bcryptjs": "^2.4.6"
   }
 }
