@@ -77,7 +77,7 @@ model ModerationItem {
    fileName      String?   //ชื่อไฟล์ ไว้เเสดงในหน้า approve
    fileType      String?   // นามสกุลไฟล์
    fileSize      Int?      // ขนาดเป็น byte เอาไปคำนวนพท.การใช้งานของ user ด้วย
-   tags          String[]  // tags ไว้ใส่ตอนอัปโหลด
+   tags          String?  // tags ไว้ใส่ตอนอัปโหลด
    status        ModStatus @default(PENDING_SCAN) // สถานะปัจจุบันในคิว
    scanResult    String?   //ผลสเเกนดิบเก็บไว้เผื่อ debug
    uploadedBy    String    //userIdของ admin ที่ approve and reject
