@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export async function GET() {
     try {
@@ -35,9 +36,9 @@ export async function POST(request: Request) {
         })
 
         return NextResponse.json(newTag, { status: 201 })
-    } catch (error: any) {
+    } catch (error) {
         console.error('Failed to create tag', error)
-        if (error.code === 'P2002') {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
             return NextResponse.json({ error: 'Tag with this name already exists' }, { status: 400 })
         }
         return NextResponse.json({ error: 'Failed to create tag' }, { status: 500 })
