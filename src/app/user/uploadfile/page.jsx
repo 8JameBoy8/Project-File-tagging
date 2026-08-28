@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { useLanguage } from '../context/LanguageContext';
-import DefaultAvatar from './DefaultAvatar';
+import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/context/LanguageContext';
+import { useUploadedFiles } from '@/context/UploadedFilesContext';
+import DefaultAvatar from '@/components/DefaultAvatar';
 import {
   Home,
   Tags,
@@ -38,9 +40,14 @@ function getFileIcon(file) {
   return <File size={20} className="file-icon" />;
 }
 
-function UploadFile({ onUploadSuccess, goToUpload, goToPasswords, goToSetting }) {
+function UploadFile() {
+  const router = useRouter();
   const { t, userProfile } = useLanguage();
+  const { setUploadedFiles } = useUploadedFiles();
   const fileInputRef = useRef(null);
+
+  const goToPasswords = () => router.push('/user/filepassword');
+  const goToSetting = () => router.push('/user/setting');
 
   const [files, setFiles] = useState([]);
   const [selectedTag, setSelectedTag] = useState('');
@@ -180,9 +187,7 @@ function UploadFile({ onUploadSuccess, goToUpload, goToPasswords, goToSetting })
       };
     });
 
-    if (onUploadSuccess) {
-      onUploadSuccess(newUploadedFiles);
-    }
+    setUploadedFiles((prev) => [...newUploadedFiles, ...prev]);
 
     setUploaded(true);
     setMessage(t('uploadSuccess', { count: files.length, suffix: passwordEnabled ? t('sharedPasswordSuffix') : '' }));
@@ -198,19 +203,19 @@ function UploadFile({ onUploadSuccess, goToUpload, goToPasswords, goToSetting })
     <div className="upload-page-wrapper">
       <header className="top-header">
         <nav className="main-navigation">
-          <button className="nav-item" type="button">
+          <button className="nav-item" type="button" onClick={() => router.push('/')}>
             <Home size={20} />
             <span>{t('home')}</span>
           </button>
-          <button className="nav-item" type="button">
+          <button className="nav-item active" type="button">
             <Upload size={20} />
             <span>{t('uploadFile')}</span>
           </button>
-          <button className="nav-item" type="button">
+          <button className="nav-item" type="button" onClick={() => router.push('/manage-tag')}>
             <Tags size={20} />
             <span>{t('manageTag')}</span>
           </button>
-          <button className="nav-item" type="button">
+          <button className="nav-item" type="button" onClick={() => router.push('/create-tag')}>
             <FolderPlus size={20} />
             <span>{t('createTag')}</span>
           </button>

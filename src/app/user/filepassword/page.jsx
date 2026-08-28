@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useLanguage } from '../context/LanguageContext';
-import DefaultAvatar from './DefaultAvatar';
+import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/context/LanguageContext';
+import { useUploadedFiles } from '@/context/UploadedFilesContext';
+import DefaultAvatar from '@/components/DefaultAvatar';
 import {
   Home,
   Upload,
@@ -22,8 +24,13 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
-function FilePasswords({ uploadedFiles = [], setUploadedFiles, goToUpload, goToPasswords, goToSetting }) {
+function FilePasswords() {
+  const router = useRouter();
   const { t, userProfile } = useLanguage();
+  const { uploadedFiles, setUploadedFiles } = useUploadedFiles();
+
+  const goToUpload = () => router.push('/user/uploadfile');
+  const goToSetting = () => router.push('/user/setting');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
@@ -150,7 +157,7 @@ function FilePasswords({ uploadedFiles = [], setUploadedFiles, goToUpload, goToP
     <div className="passwords-page-wrapper">
       <header className="top-header">
         <nav className="main-navigation">
-          <button className="nav-item" type="button">
+          <button className="nav-item" type="button" onClick={() => router.push('/')}>
             <Home size={20} />
             <span>{t('home')}</span>
           </button>
@@ -158,11 +165,11 @@ function FilePasswords({ uploadedFiles = [], setUploadedFiles, goToUpload, goToP
             <Upload size={20} />
             <span>{t('uploadFile')}</span>
           </button>
-          <button className="nav-item" type="button">
+          <button className="nav-item" type="button" onClick={() => router.push('/manage-tag')}>
             <Tags size={20} />
             <span>{t('manageTag')}</span>
           </button>
-          <button className="nav-item" type="button">
+          <button className="nav-item" type="button" onClick={() => router.push('/create-tag')}>
             <FolderPlus size={20} />
             <span>{t('createTag')}</span>
           </button>
