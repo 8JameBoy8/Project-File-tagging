@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -33,3 +34,67 @@ model FileTag {
 
   @@id([fileId, tagId])
 }
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  role          Role      @default(USER)
+  isVerified    Boolean   @default(false)
+  displayName   String?   // nameshow
+  avatarUrl     String?   // pf
+  language      String    @default("TH") // ภาษาที่ user ตั้งไว้ (TH/EN)
+  createdAt     DateTime  @default(now())
+  updateAt      DateTime  @updatedAt
+  deletedAt     DateTime?
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model PasswordResetOtp {
+  id        String @id @default(cuid())
+  userId    String
+  otpHash   String   //hash 
+  expiresAt DateTime // 10min
+  used      Boolean @default(false)  //กันเอา otp เดิมมาใช้
+  createdAt DateTime @default(now())
+}
+
+//keep ประวัติของเเอดมินการกระทำ ทุกครั้ง เเถมตรวจย้อนหลังได้
+model AdminActionLog {
+  id            String    @id @default(cuid())
+  adminID       String             // id ของเเอดมินที่กระทำการ
+  action        String             //ชื่อการกระทำ
+  targetUserId  String?            //id ของ userที่ถูกกระทำ (ถ้ามี)
+  createdAt     DateTime  @default(now())    
+}
+
+//เก็บรายการไฟล์เนื้อหาที่รอตรวจสอบ
+model ModerationItem {
+   id            String    @id @default(cuid())
+   fileUrl       String    // urlของไฟล์ที่อัปโหลดใน Cloudinary
+   fileName      String?   //ชื่อไฟล์ ไว้เเสดงในหน้า approve
+   fileType      String?   // นามสกุลไฟล์
+   fileSize      Int?      // ขนาดเป็น byte เอาไปคำนวนพท.การใช้งานของ user ด้วย
+   tags          String?  // tags ไว้ใส่ตอนอัปโหลด
+   status        ModStatus @default(PENDING_SCAN) // สถานะปัจจุบันในคิว
+   scanResult    String?   //ผลสเเกนดิบเก็บไว้เผื่อ debug
+   uploadedBy    String    //userIdของ user ที่อัปโหลดไฟล์นี้
+   reviewedBy    String?   //userIdของ admin ที่ approve/reject รายการนี้
+   createdAt     DateTime  @default(now())
+   updatedAt     DateTime  @updatedAt
+}
+
+//status of item in q ไล่ตามลำดับที่เกิดขึ้นจริง
+enum ModStatus {
+  PENDING_SCAN       //เพิ่งอัปโหลด รอสเเกนไวรัส
+  SCANNING           //กำลังสเเกนอยู๋
+  SCAN_FAILED        //สแกนเเล้วพบไวรัส/ปัญหา ถูกปัดตกอัตโนมัติ
+  SCAN_CLEAN         //สแกนผ่านปลอดภัย
+  PENDING_REVIEW     //รอเเอดมินตรวจสอบเนื้อหา
+  APPROVED
+  REJECTED
+}
+
