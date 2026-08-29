@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { hashPassword } from '@/lib/auth/hash'
+import { signToken } from '@/lib/auth/jwt'
 
 //set rule validate input ด้วย zod   email format pass=8
 const registerSchema = z.object({
@@ -41,17 +42,35 @@ export async function POST(req: NextRequest) {
             },
         })
 
+        // สมัครสำเร็จ ให้ login ให้เลยในตัว (ออก JWT + set cookie เหมือน /api/auth/login)
+        // จะได้ไม่ต้องยิงซ้ำอีกรอบ ทั้งฝั่งเว็บ (ใช้ cookie) และมือถือ (ใช้ token ใน body)
+        const token = await signToken({
+            userId: newUser.id,
+            role: newUser.role,
+        })
+
         //ตอบกลับ client ว่าสำเร็จ ส่งกลับเเค่ id/email/role ไม่ส่ง passwordHash เด็ดขาด
-        return NextResponse.json(
+        const response = NextResponse.json(
             {
                 user: {
                     id: newUser.id,
                     email: newUser.email,
                     role: newUser.role,
                 },
+                token,
             },
             { status: 201 }  // 201 = created
         )
+
+        response.cookies.set('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24 * 7, //7d
+            path: '/',
+        })
+
+        return response
     } catch (error) {
         //if error มาจาก zod validation = input ผิด format
       if (error instanceof z.ZodError) {

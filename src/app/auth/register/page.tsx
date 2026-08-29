@@ -40,26 +40,16 @@ export default function RegisterPage() {
         return;
       }
 
-      // สมัครสำเร็จแล้ว ล็อกอินให้เลยจะได้ไม่ต้องกรอกซ้ำ (register เองไม่ได้ set cookie ให้)
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      if (loginRes.ok) {
-        // บันทึกชื่อผู้ใช้ที่กรอกไว้เป็น displayName จริงในระบบ (ไม่ block การไปหน้าถัดไปถ้าพลาด)
-        if (username.trim()) {
-          fetch("/api/profile", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ displayName: username.trim() }),
-          }).catch(() => {});
-        }
-        router.push("/user/home");
-      } else {
-        // สมัครผ่านแล้วแต่ auto-login ไม่ผ่านด้วยเหตุผลบางอย่าง ให้ไปกรอกเข้าสู่ระบบเองแทน
-        router.push("/auth/login");
+      // /api/auth/register ตอนนี้ set cookie ให้เลยในตัว (เหมือน login) ไม่ต้องยิงซ้ำอีกรอบแล้ว
+      // บันทึกชื่อผู้ใช้ที่กรอกไว้เป็น displayName จริงในระบบ (ไม่ block การไปหน้าถัดไปถ้าพลาด)
+      if (username.trim()) {
+        fetch("/api/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ displayName: username.trim() }),
+        }).catch(() => {});
       }
+      router.push("/user/home");
     } catch {
       setError(t("genericErrorMsg"));
     } finally {

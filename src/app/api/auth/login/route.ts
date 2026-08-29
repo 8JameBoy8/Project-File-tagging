@@ -55,13 +55,16 @@ export async function POST(req:NextRequest) {
             role: user.role,
         })
 
-        //send token กลับไปให้้ client ผ่าน httpOnly cookie safe กว่าเก็บใน localStorage
+        //send token กลับไปให้้ client ผ่าน httpOnly cookie (ฝั่งเว็บ browser ใช้อันนี้ ปลอดภัยกว่า
+        //เก็บใน localStorage) และแนบ token ตรงๆ ใน body ด้วย (ฝั่ง mobile app ไม่มี cookie jar
+        //แบบเว็บ ต้องเก็บ token เองแล้วแนบเป็น header Authorization: Bearer <token> แทน)
         const response = NextResponse.json({
             user: {
                 id: user.id,
                 email: user.email,
                 role: user.role,
             },
+            token,
         })
 
         response.cookies.set('token', token, {

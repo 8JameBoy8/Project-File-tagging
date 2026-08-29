@@ -13,9 +13,11 @@ export type AuthUser = {
 export async function requireAuth(
     req: NextRequest
 ) : Promise<AuthUser | NextResponse> {
-    
-//ดึง token จาก cookie ชื่อ token ที่ตั้งไว้ตอน login
-    const token = req.cookies.get('token')?.value
+
+//ดึง token จาก cookie ก่อน (ฝั่งเว็บ browser แนบมาให้เอง) ถ้าไม่มีค่อยลองดูจาก header
+//Authorization: Bearer <token> (ฝั่ง mobile app ไม่มี cookie jar แบบเว็บ เลยต้องเก็บ token เองแล้วแนบ header แทน)
+    const bearerToken = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+    const token = req.cookies.get('token')?.value || bearerToken
 
 //ถ้าไม่มี token เลย ไม่ได้ login ตอบ 401 Unauthorized
 if (!token) {
