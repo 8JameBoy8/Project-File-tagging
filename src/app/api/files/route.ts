@@ -139,7 +139,12 @@ export async function POST(request: NextRequest) {
         })
 
         const { password, ...rest } = newFile
-        return NextResponse.json({ ...rest, hasPassword: !!password }, { status: 201 })
+        return NextResponse.json({
+            ...rest,
+            tags: newFile.tags.map(t => t.tag.name),
+            hasPassword: !!password,
+            src: `/api/files/${newFile.id}/serve`,
+        }, { status: 201 })
     } catch (error) {
         console.error('Upload error', error)
         return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
