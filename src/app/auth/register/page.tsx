@@ -1,26 +1,62 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import InputField from "@/components/InputField";
 import AuthButton from "@/components/AuthButton";
 
 export default function RegisterPage() {
-  // 1. เพิ่ม State สำหรับเก็บข้อมูล Username ตรงนี้ครับ
+  const router = useRouter();
+  // หมายเหตุ: username เก็บไว้ในฟอร์มเฉยๆ ยังไม่ได้ส่งไปที่ backend เพราะ /api/auth/register
+  // และ User model ตอนนี้รองรับแค่ email/password (มี displayName แต่ยังไม่มีจุดให้ตั้งตอนสมัคร)
   const [username, setUsername] = useState("");
-  
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
     if (password !== confirmPassword) {
-      alert("รหัสผ่านไม่ตรงกัน กรุณาลองใหม่อีกครั้ง");
+      setError("รหัสผ่านไม่ตรงกัน กรุณาลองใหม่อีกครั้ง");
       return;
     }
-    // เพิ่ม username เข้าไปใน log เพื่อเช็คข้อมูลด้วย
-    console.log("ข้อมูลสมัครสมาชิก:", { username, email, password });
+
+    setSubmitting(true);
+    try {
+      const registerRes = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const registerData = await registerRes.json();
+      if (!registerRes.ok) {
+        setError(registerData?.error?.message || "สมัครสมาชิกไม่สำเร็จ");
+        return;
+      }
+
+      // สมัครสำเร็จแล้ว ล็อกอินให้เลยจะได้ไม่ต้องกรอกซ้ำ (register เองไม่ได้ set cookie ให้)
+      const loginRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (loginRes.ok) {
+        router.push("/user/home");
+      } else {
+        // สมัครผ่านแล้วแต่ auto-login ไม่ผ่านด้วยเหตุผลบางอย่าง ให้ไปกรอกเข้าสู่ระบบเองแทน
+        router.push("/auth/login");
+      }
+    } catch {
+      setError("เกิดข้อผิดพลาด กรุณาลองใหม่");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -80,7 +116,8 @@ export default function RegisterPage() {
               maxLength={8} 
               minLength={8} 
             />
-            <AuthButton text="Sign Up" />
+            {error && <p className="text-sm text-red-500 text-center -mb-2">{error}</p>}
+            <AuthButton text={submitting ? "กำลังสมัครสมาชิก..." : "Sign Up"} />
           </form>
           
           <div className="flex justify-center w-full mt-6 pt-6 border-t border-gray-100 text-sm">
