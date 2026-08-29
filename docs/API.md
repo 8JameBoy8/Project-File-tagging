@@ -4,7 +4,7 @@
 
 ## Base URL
 
-- **Dev (ผ่าน tunnel ชั่วคราว):** `https://blue-skunk-27.loca.lt`
+- **Dev (ผ่าน tunnel ชั่วคราว):** `https://filetagging-api.loca.lt`
 - **Local (รันเว็บเองในเครื่อง):** `http://localhost:3000`
 
 > ⚠️ **URL นี้ไม่คงที่** — localtunnel (free tier) หลุด/เปลี่ยน URL เองได้เรื่อยๆ โดยไม่แจ้งล่วงหน้า ถ้ายิงแล้วได้ `502`/`503`/timeout ให้ไปถามคนที่รัน dev server ว่า URL ล่าสุดคืออะไร (เช็คค่านี้ที่ `lib/config.ts` ในโปรเจกต์ mobile ให้ตรงกันเสมอ) ถ้าจะให้เสถียรกว่านี้ต้อง deploy ขึ้น hosting จริงแทน tunnel
