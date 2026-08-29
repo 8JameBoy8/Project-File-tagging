@@ -1,16 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import { useUploadedFiles } from '@/context/UploadedFilesContext';
-import DefaultAvatar from '@/components/DefaultAvatar';
+import Topbar from '@/components/Topbar';
 import {
-  Home,
-  Upload,
-  Tags,
-  FolderPlus,
-  Settings,
   Eye,
   EyeOff,
   Lock,
@@ -25,12 +19,8 @@ import {
 } from 'lucide-react';
 
 function FilePasswords() {
-  const router = useRouter();
   const { t, userProfile } = useLanguage();
   const { uploadedFiles, setUploadedFiles } = useUploadedFiles();
-
-  const goToUpload = () => router.push('/user/uploadfile');
-  const goToSetting = () => router.push('/user/setting');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
@@ -155,42 +145,8 @@ function FilePasswords() {
   });
 
   return (
-    <div className="passwords-page-wrapper">
-      <header className="top-header">
-        <nav className="main-navigation">
-          <button className="nav-item" type="button" onClick={() => router.push('/')}>
-            <Home size={20} />
-            <span>{t('home')}</span>
-          </button>
-          <button className="nav-item" type="button" onClick={goToUpload}>
-            <Upload size={20} />
-            <span>{t('uploadFile')}</span>
-          </button>
-          <button className="nav-item" type="button" onClick={() => router.push('/manage-tag')}>
-            <Tags size={20} />
-            <span>{t('manageTag')}</span>
-          </button>
-          <button className="nav-item" type="button" onClick={() => router.push('/create-tag')}>
-            <FolderPlus size={20} />
-            <span>{t('createTag')}</span>
-          </button>
-          <button className="nav-item" type="button" onClick={goToSetting}>
-            <Settings size={20} />
-            <span>{t('setting')}</span>
-          </button>
-        </nav>
-
-        <div className="header-right-group">
-          <h2 className="header-page-title">{t('filePasswords')}</h2>
-          <button className="profile-button" type="button" onClick={goToSetting}>
-            {userProfile?.avatar ? (
-              <img src={userProfile.avatar} alt={t('profile')} className="navbar-avatar-img" />
-            ) : (
-              <DefaultAvatar size={36} />
-            )}
-          </button>
-        </div>
-      </header>
+    <div className="legacy-user-page passwords-page-wrapper">
+      <Topbar title={t('filePasswords')} />
 
       <main className="main-container-full">
         <section className="card password-list-card">

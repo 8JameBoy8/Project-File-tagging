@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import InputField from "../../components/InputField";
-import AuthButton from "../../components/AuthButton";
+import InputField from "@/components/InputField";
+import AuthButton from "@/components/AuthButton";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
   const handleVerifyOtp = (e: React.FormEvent) => {
     e.preventDefault();
     alert("ยืนยัน OTP สำเร็จ! กำลังพาไปหน้าตั้งรหัสผ่านใหม่...");
-    router.push("/change-password"); 
+    router.push("/auth/change-password");
   };
 
   return (
@@ -58,7 +58,7 @@ export default function ForgotPasswordPage() {
             </form>
           )}
           <div className="flex justify-center w-full mt-6 pt-6 border-t border-gray-100 text-sm">
-            <Link href="/login" className="text-blue-500 hover:text-blue-700 font-medium transition-colors">&larr; กลับไปหน้าเข้าสู่ระบบ</Link>
+            <Link href="/auth/login" className="text-blue-500 hover:text-blue-700 font-medium transition-colors">&larr; กลับไปหน้าเข้าสู่ระบบ</Link>
           </div>
         </div>
       </main>

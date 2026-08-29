@@ -3,25 +3,13 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
-import {
-  KeyRound,
-  Globe,
-  User,
-  LogOut,
-  Check,
-  Home,
-  Upload,
-  Tags,
-  FolderPlus,
-  Settings as SettingsIcon,
-} from 'lucide-react';
-import DefaultAvatar from '@/components/DefaultAvatar';
+import { KeyRound, Globe, User, LogOut, Check } from 'lucide-react';
+import Topbar from '@/components/Topbar';
 
 export default function Setting() {
   const router = useRouter();
-  const { lang, changeLanguage, userProfile, t } = useLanguage();
+  const { lang, changeLanguage, t } = useLanguage();
 
-  const goToUpload = () => router.push('/user/uploadfile');
   const goToPasswords = () => router.push('/user/filepassword');
   const goToProfile = () => router.push('/user/profile');
 
@@ -43,43 +31,8 @@ export default function Setting() {
   };
 
   return (
-    <div className="setting-page-container">
-      {/* Top Header Navigation */}
-      <header className="top-header">
-        <nav className="main-navigation">
-          <button className="nav-item" onClick={() => router.push('/')}>
-            <Home size={20} />
-            <span>{t('home')}</span>
-          </button>
-          <button className="nav-item" onClick={goToUpload}>
-            <Upload size={20} />
-            <span>{t('uploadFile')}</span>
-          </button>
-          <button className="nav-item" onClick={() => router.push('/manage-tag')}>
-            <Tags size={20} />
-            <span>{t('manageTag')}</span>
-          </button>
-          <button className="nav-item" onClick={() => router.push('/create-tag')}>
-            <FolderPlus size={20} />
-            <span>{t('createTag')}</span>
-          </button>
-          <button className="nav-item active" onClick={() => setActiveTab('menu')}>
-            <SettingsIcon size={20} />
-            <span>{t('setting')}</span>
-          </button>
-        </nav>
-
-        <div className="header-right">
-          <h2>{t('setting')}</h2>
-          <button className="profile-icon-btn" onClick={goToProfile}>
-            {userProfile.avatar ? (
-              <img src={userProfile.avatar} alt={t('profile')} className="navbar-avatar-img" />
-            ) : (
-              <DefaultAvatar size={36} />
-            )}
-          </button>
-        </div>
-      </header>
+    <div className="legacy-user-page setting-page-container">
+      <Topbar title={t('setting')} />
 
       {/* Main Content Area */}
       <main className="setting-content-clean">

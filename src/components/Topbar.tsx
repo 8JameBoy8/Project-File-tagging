@@ -8,10 +8,10 @@ export default function Topbar({ title }: { title: string }) {
     const pathname = usePathname()
 
     const tabs = [
-        { name: 'Home', href: '/', icon: <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /></svg> },
-        { name: 'Manage Tag', href: '/manage-tag', icon: <svg viewBox="0 0 24 24"><path d="M20 12l-8 8-9-9V4h7l9 9z" /><circle cx="7.5" cy="7.5" r="1.2" /></svg> },
+        { name: 'Home', href: '/user/home', icon: <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /></svg> },
+        { name: 'Manage Tag', href: '/user/manage-tag', icon: <svg viewBox="0 0 24 24"><path d="M20 12l-8 8-9-9V4h7l9 9z" /><circle cx="7.5" cy="7.5" r="1.2" /></svg> },
         { name: 'Import File', href: '/user/uploadfile', icon: <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></svg> },
-        { name: 'Create Tag', href: '/create-tag', icon: <svg viewBox="0 0 24 24"><path d="M12 8v8M8 12h8" /><rect x="3" y="3" width="18" height="18" rx="4" /></svg> },
+        { name: 'Create Tag', href: '/user/create-tag', icon: <svg viewBox="0 0 24 24"><path d="M12 8v8M8 12h8" /><rect x="3" y="3" width="18" height="18" rx="4" /></svg> },
         { name: 'Setting', href: '/user/setting', icon: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z" /></svg> },
     ]
 

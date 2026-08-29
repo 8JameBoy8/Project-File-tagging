@@ -3,21 +3,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
-import {
-  Home,
-  Upload,
-  Tags,
-  FolderPlus,
-  Settings as SettingsIcon,
-  Camera,
-} from 'lucide-react';
+import { Camera } from 'lucide-react';
 import DefaultAvatar from '@/components/DefaultAvatar';
+import Topbar from '@/components/Topbar';
 
 export default function Profile() {
   const router = useRouter();
   const { userProfile, updateProfile, changeAccountPassword, t } = useLanguage();
 
-  const goToUpload = () => router.push('/user/uploadfile');
   const goToSetting = () => router.push('/user/setting');
 
   // 'profile' | 'change-password'
@@ -81,43 +74,8 @@ export default function Profile() {
   };
 
   return (
-    <div className="setting-page-container">
-      {/* Top Header Navigation */}
-      <header className="top-header">
-        <nav className="main-navigation">
-          <button className="nav-item" onClick={() => router.push('/')}>
-            <Home size={20} />
-            <span>{t('home')}</span>
-          </button>
-          <button className="nav-item" onClick={goToUpload}>
-            <Upload size={20} />
-            <span>{t('uploadFile')}</span>
-          </button>
-          <button className="nav-item" onClick={() => router.push('/manage-tag')}>
-            <Tags size={20} />
-            <span>{t('manageTag')}</span>
-          </button>
-          <button className="nav-item" onClick={() => router.push('/create-tag')}>
-            <FolderPlus size={20} />
-            <span>{t('createTag')}</span>
-          </button>
-          <button className="nav-item active" onClick={goToSetting}>
-            <SettingsIcon size={20} />
-            <span>{t('setting')}</span>
-          </button>
-        </nav>
-
-        <div className="header-right">
-          <h2>{t('profile')}</h2>
-          <button className="profile-icon-btn" onClick={() => setView('profile')}>
-            {userProfile.avatar ? (
-              <img src={userProfile.avatar} alt={t('profile')} className="navbar-avatar-img" />
-            ) : (
-              <DefaultAvatar size={36} />
-            )}
-          </button>
-        </div>
-      </header>
+    <div className="legacy-user-page setting-page-container">
+      <Topbar title={t('profile')} />
 
       {/* Main Content Area */}
       <main className="setting-content-clean">

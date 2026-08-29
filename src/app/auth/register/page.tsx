@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import InputField from "../../components/InputField";
-import AuthButton from "../../components/AuthButton";
+import InputField from "@/components/InputField";
+import AuthButton from "@/components/AuthButton";
 
 export default function RegisterPage() {
   // 1. เพิ่ม State สำหรับเก็บข้อมูล Username ตรงนี้ครับ
@@ -85,7 +85,7 @@ export default function RegisterPage() {
           
           <div className="flex justify-center w-full mt-6 pt-6 border-t border-gray-100 text-sm">
             <span className="text-gray-600 mr-2">มีบัญชีอยู่แล้ว?</span>
-            <Link href="/login" className="text-blue-500 hover:text-blue-700 font-medium transition-colors">เข้าสู่ระบบ</Link>
+            <Link href="/auth/login" className="text-blue-500 hover:text-blue-700 font-medium transition-colors">เข้าสู่ระบบ</Link>
           </div>
         </div>
       </main>
