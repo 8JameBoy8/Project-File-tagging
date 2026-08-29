@@ -7,6 +7,12 @@ import { Camera } from 'lucide-react';
 import DefaultAvatar from '@/components/DefaultAvatar';
 import Topbar from '@/components/Topbar';
 
+function formatBytes(bytes) {
+  if (!bytes || bytes <= 0) return '0 GB';
+  const gb = bytes / (1024 * 1024 * 1024);
+  return `${gb.toFixed(2)} GB`;
+}
+
 export default function Profile() {
   const router = useRouter();
   const { userProfile, updateProfile, changeAccountPassword, t } = useLanguage();
@@ -16,43 +22,69 @@ export default function Profile() {
   // 'profile' | 'change-password'
   const [view, setView] = useState('profile');
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const [tempUsername, setTempUsername] = useState(userProfile.username);
-  const [tempAvatar, setTempAvatar] = useState(userProfile.avatar);
+  const [tempUsername, setTempUsername] = useState(userProfile.username || '');
+  const [tempAvatar, setTempAvatar] = useState(userProfile.avatar); // preview URL (blob หรือของจริง)
+  const [tempAvatarFile, setTempAvatarFile] = useState(null); // ไฟล์ดิบ ส่งจริงตอน confirm
   const fileInputRef = useRef(null);
 
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false);
+
+  const [storage, setStorage] = useState({ usedBytes: 0, limitBytes: 0 });
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- resets the edit form to match userProfile when it changes; fields then diverge as the user types
-    setTempUsername(userProfile.username);
+    setTempUsername(userProfile.username || '');
     setTempAvatar(userProfile.avatar);
   }, [userProfile]);
+
+  useEffect(() => {
+    fetch('/api/profile/storage')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setStorage(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  const storagePercent = storage.limitBytes > 0 ? Math.min(100, (storage.usedBytes / storage.limitBytes) * 100) : 0;
+  const storageRemainingBytes = Math.max(0, storage.limitBytes - storage.usedBytes);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
       setTempAvatar(imageUrl);
+      setTempAvatarFile(file);
     }
     e.target.value = '';
   };
 
-  const confirmSaveProfile = () => {
-    updateProfile(tempUsername, tempAvatar);
+  const confirmSaveProfile = async () => {
+    setSaving(true);
+    const success = await updateProfile(tempUsername, tempAvatarFile);
+    setSaving(false);
     setShowSaveModal(false);
-    alert(t('profileSaved'));
+    if (success) {
+      setTempAvatarFile(null);
+      alert(t('profileSaved'));
+    } else {
+      alert(t('profileSaveFailed'));
+    }
   };
 
   const handleCancelEdit = () => {
-    setTempUsername(userProfile.username);
+    setTempUsername(userProfile.username || '');
     setTempAvatar(userProfile.avatar);
+    setTempAvatarFile(null);
     goToSetting();
   };
 
-  const handleChangePassword = (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
 
     if (newPassword !== confirmPassword) {
@@ -60,7 +92,10 @@ export default function Profile() {
       return;
     }
 
-    const success = changeAccountPassword(oldPassword, newPassword);
+    setPasswordSubmitting(true);
+    const success = await changeAccountPassword(oldPassword, newPassword);
+    setPasswordSubmitting(false);
+
     if (!success) {
       alert(t('currentPasswordIncorrect'));
       return;
@@ -125,11 +160,11 @@ export default function Profile() {
             <div className="storage-box-clean">
               <div className="storage-title">{t('storageUsage')}</div>
               <div className="storage-bar-bg">
-                <div className="storage-bar-fill" style={{ width: '40%' }}></div>
+                <div className="storage-bar-fill" style={{ width: `${storagePercent}%` }}></div>
               </div>
               <div className="storage-info">
-                <span>{t('used')} 2 GB</span>
-                <span>{t('remaining')} 3 GB</span>
+                <span>{t('used')} {formatBytes(storage.usedBytes)}</span>
+                <span>{t('remaining')} {formatBytes(storageRemainingBytes)}</span>
               </div>
             </div>
 
@@ -139,7 +174,7 @@ export default function Profile() {
 
             <div className="profile-action-buttons">
               <button className="btn-cancel" onClick={handleCancelEdit}>{t('cancelBtn')}</button>
-              <button className="btn-submit" onClick={() => setShowSaveModal(true)}>{t('confirmBtn')}</button>
+              <button className="btn-submit" onClick={() => setShowSaveModal(true)} disabled={saving}>{t('confirmBtn')}</button>
             </div>
           </div>
         )}
@@ -182,7 +217,7 @@ export default function Profile() {
 
               <div className="profile-action-buttons">
                 <button type="button" className="btn-cancel" onClick={() => setView('profile')}>{t('cancelBtn')}</button>
-                <button type="submit" className="btn-submit">{t('confirmBtn')}</button>
+                <button type="submit" className="btn-submit" disabled={passwordSubmitting}>{t('confirmBtn')}</button>
               </div>
             </form>
           </div>
@@ -198,7 +233,7 @@ export default function Profile() {
             <p>{t('saveProfileMsg')}</p>
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setShowSaveModal(false)}>{t('cancelBtn')}</button>
-              <button className="btn-primary" onClick={confirmSaveProfile}>{t('confirmBtn')}</button>
+              <button className="btn-primary" onClick={confirmSaveProfile} disabled={saving}>{t('confirmBtn')}</button>
             </div>
           </div>
         </div>

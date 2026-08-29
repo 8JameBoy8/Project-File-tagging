@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import InputField from "@/components/InputField";
 import AuthButton from "@/components/AuthButton";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function LoginPage() {
   // useSearchParams() ต้องอยู่ใต้ Suspense ไม่งั้น next build จะ prerender ไม่ผ่าน
@@ -18,6 +19,7 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -35,12 +37,12 @@ function LoginForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error?.message || "เข้าสู่ระบบไม่สำเร็จ");
+        setError(data?.error?.message || t("loginFailedMsg"));
         return;
       }
       router.push(searchParams.get("from") || "/user/home");
     } catch {
-      setError("เกิดข้อผิดพลาด กรุณาลองใหม่");
+      setError(t("genericErrorMsg"));
     } finally {
       setSubmitting(false);
     }
@@ -49,7 +51,7 @@ function LoginForm() {
   return (
     <div className="min-h-screen bg-[#bce3f9] flex flex-col font-sans">
       <header className="bg-white/60 backdrop-blur-sm py-4 px-8 flex justify-end shadow-sm">
-        <h1 className="text-xl font-semibold text-gray-700">Login</h1>
+        <h1 className="text-xl font-semibold text-gray-700">{t("loginPageTitle")}</h1>
       </header>
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 relative mt-10">
@@ -61,12 +63,12 @@ function LoginForm() {
             </div>
           </div>
           <div className="mt-10 text-center">
-            <h2 className="text-2xl font-bold text-black mb-6 uppercase tracking-wider">Login</h2>
+            <h2 className="text-2xl font-bold text-black mb-6 uppercase tracking-wider">{t("loginPageTitle")}</h2>
           </div>
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <InputField label="Gmail" type="email" placeholder="Example@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             <InputField
-              label="Password"
+              label={t("password")}
               type="password"
               placeholder="••••••••"
               value={password}
@@ -76,11 +78,11 @@ function LoginForm() {
               minLength={8}
             />
             {error && <p className="text-sm text-red-500 text-center -mb-2">{error}</p>}
-            <AuthButton text={submitting ? "กำลังเข้าสู่ระบบ..." : "Login"} />
+            <AuthButton text={submitting ? t("loggingInBtn") : t("loginBtn")} />
           </form>
           <div className="flex justify-between w-full mt-6 pt-6 border-t border-gray-100 text-sm">
-            <Link href="/auth/register" className="text-blue-500 hover:text-blue-700 font-medium transition-colors">Register?</Link>
-            <Link href="/auth/forgot-password" className="text-blue-500 hover:text-blue-700 font-medium transition-colors">ลืมรหัสผ่าน</Link>
+            <Link href="/auth/register" className="text-blue-500 hover:text-blue-700 font-medium transition-colors">{t("registerLinkText")}</Link>
+            <Link href="/auth/forgot-password" className="text-blue-500 hover:text-blue-700 font-medium transition-colors">{t("forgotPasswordLinkText")}</Link>
           </div>
         </div>
       </main>

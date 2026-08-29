@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import InputField from "@/components/InputField";
 import AuthButton from "@/components/AuthButton";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function RegisterPage() {
   const router = useRouter();
-  // หมายเหตุ: username เก็บไว้ในฟอร์มเฉยๆ ยังไม่ได้ส่งไปที่ backend เพราะ /api/auth/register
-  // และ User model ตอนนี้รองรับแค่ email/password (มี displayName แต่ยังไม่มีจุดให้ตั้งตอนสมัคร)
+  const { t } = useLanguage();
   const [username, setUsername] = useState("");
 
   const [email, setEmail] = useState("");
@@ -23,7 +23,7 @@ export default function RegisterPage() {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("รหัสผ่านไม่ตรงกัน กรุณาลองใหม่อีกครั้ง");
+      setError(t("passwordMismatch"));
       return;
     }
 
@@ -36,7 +36,7 @@ export default function RegisterPage() {
       });
       const registerData = await registerRes.json();
       if (!registerRes.ok) {
-        setError(registerData?.error?.message || "สมัครสมาชิกไม่สำเร็จ");
+        setError(registerData?.error?.message || t("registerFailedMsg"));
         return;
       }
 
@@ -47,13 +47,21 @@ export default function RegisterPage() {
         body: JSON.stringify({ email, password }),
       });
       if (loginRes.ok) {
+        // บันทึกชื่อผู้ใช้ที่กรอกไว้เป็น displayName จริงในระบบ (ไม่ block การไปหน้าถัดไปถ้าพลาด)
+        if (username.trim()) {
+          fetch("/api/profile", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ displayName: username.trim() }),
+          }).catch(() => {});
+        }
         router.push("/user/home");
       } else {
         // สมัครผ่านแล้วแต่ auto-login ไม่ผ่านด้วยเหตุผลบางอย่าง ให้ไปกรอกเข้าสู่ระบบเองแทน
         router.push("/auth/login");
       }
     } catch {
-      setError("เกิดข้อผิดพลาด กรุณาลองใหม่");
+      setError(t("genericErrorMsg"));
     } finally {
       setSubmitting(false);
     }
@@ -62,7 +70,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[#bce3f9] flex flex-col font-sans">
       <header className="bg-white/60 backdrop-blur-sm py-4 px-8 flex justify-end shadow-sm">
-        <h1 className="text-xl font-semibold text-gray-700">Register</h1>
+        <h1 className="text-xl font-semibold text-gray-700">{t("registerPageTitle")}</h1>
       </header>
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 relative mt-10">
@@ -74,55 +82,54 @@ export default function RegisterPage() {
             </div>
           </div>
           <div className="mt-10 text-center">
-            <h2 className="text-2xl font-bold text-black mb-6 uppercase tracking-wider">Register</h2>
+            <h2 className="text-2xl font-bold text-black mb-6 uppercase tracking-wider">{t("registerPageTitle")}</h2>
           </div>
-          
+
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-            {/* 2. เพิ่มช่องกรอก Username ตรงนี้ครับ */}
-            <InputField 
-              label="Username" 
-              type="text" 
-              placeholder="Your Username" 
-              value={username} 
-              onChange={(e) => setUsername(e.target.value)} 
-              required 
+            <InputField
+              label={t("usernameLabel")}
+              type="text"
+              placeholder={t("usernamePlaceholder")}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
             />
-            
-            <InputField 
-              label="Gmail" 
-              type="email" 
-              placeholder="Example@gmail.com" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              required 
+
+            <InputField
+              label="Gmail"
+              type="email"
+              placeholder="Example@gmail.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
-            <InputField 
-              label="Password" 
-              type="password" 
-              placeholder="••••••••" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
-              maxLength={8} 
-              minLength={8} 
+            <InputField
+              label={t("password")}
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              maxLength={8}
+              minLength={8}
             />
-            <InputField 
-              label="Confirm Password" 
-              type="password" 
-              placeholder="••••••••" 
-              value={confirmPassword} 
-              onChange={(e) => setConfirmPassword(e.target.value)} 
-              required 
-              maxLength={8} 
-              minLength={8} 
+            <InputField
+              label={t("confirmPassword")}
+              type="password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              maxLength={8}
+              minLength={8}
             />
             {error && <p className="text-sm text-red-500 text-center -mb-2">{error}</p>}
-            <AuthButton text={submitting ? "กำลังสมัครสมาชิก..." : "Sign Up"} />
+            <AuthButton text={submitting ? t("signingUpBtn") : t("signUpBtn")} />
           </form>
-          
+
           <div className="flex justify-center w-full mt-6 pt-6 border-t border-gray-100 text-sm">
-            <span className="text-gray-600 mr-2">มีบัญชีอยู่แล้ว?</span>
-            <Link href="/auth/login" className="text-blue-500 hover:text-blue-700 font-medium transition-colors">เข้าสู่ระบบ</Link>
+            <span className="text-gray-600 mr-2">{t("alreadyHaveAccountText")}</span>
+            <Link href="/auth/login" className="text-blue-500 hover:text-blue-700 font-medium transition-colors">{t("loginLinkText")}</Link>
           </div>
         </div>
       </main>

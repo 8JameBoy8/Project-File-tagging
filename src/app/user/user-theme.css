@@ -738,6 +738,42 @@
   gap: 24px;
 }
 
+/* UPLOAD PAGE LAYOUT — เฉพาะหน้า /user/uploadfile เท่านั้น (ไม่ใช้ .main-container-full ร่วม
+   กับหน้า filepassword เพราะจอกว้างต้องใช้พื้นที่ซ้าย/ขวาแทนการปล่อยให้หน้ายาวลงเรื่อยๆ เวลามีไฟล์เยอะ) */
+.upload-layout-grid {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 60px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 0;
+}
+
+@media (min-width: 1024px) {
+  .upload-layout-grid {
+    display: grid;
+    grid-template-columns: minmax(300px, 380px) 1fr;
+    align-items: start;
+    height: calc(100vh - 160px);
+  }
+
+  /* การ์ดฝั่งขวา (รายการไฟล์ที่เลือก) สูงเท่าคอลัมน์ แต่ให้ .files-list เป็นตัวสกอลล์แทน
+     ปุ่ม Confirm/Cancel ที่ .action-buttons-group ด้านล่างจะได้โผล่เสมอไม่ต้อง scroll ทั้งหน้า */
+  .upload-layout-grid .selected-files-card {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .upload-layout-grid .files-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+}
+
 .card {
   background: #ffffff;
   border-radius: 16px;

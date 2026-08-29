@@ -1,14 +1,18 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import fs from 'fs'
 import path from 'path'
+import { requireAuth } from '@/lib/auth/middleware'
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads')
 
 export async function GET(
-    request: Request,
+    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof NextResponse) return authResult
+
     try {
         const { id } = await params
         const file = await prisma.file.findUnique({
@@ -20,11 +24,15 @@ export async function GET(
             }
         })
 
-        if (!file) return NextResponse.json({ error: 'File not found' }, { status: 404 })
+        if (!file || file.userId !== authResult.userId) {
+            return NextResponse.json({ error: 'File not found' }, { status: 404 })
+        }
 
+        const { password, ...rest } = file
         return NextResponse.json({
-            ...file,
+            ...rest,
             tags: file.tags.map(t => t.tag.name),
+            hasPassword: !!password,
             src: `/api/files/${file.id}/serve`
         })
     } catch (error) {
@@ -34,14 +42,19 @@ export async function GET(
 }
 
 export async function DELETE(
-    request: Request,
+    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof NextResponse) return authResult
+
     try {
         const { id } = await params
         const file = await prisma.file.findUnique({ where: { id } })
 
-        if (!file) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+        if (!file || file.userId !== authResult.userId) {
+            return NextResponse.json({ error: 'Not found' }, { status: 404 })
+        }
 
         // delete from db
         await prisma.file.delete({ where: { id } })

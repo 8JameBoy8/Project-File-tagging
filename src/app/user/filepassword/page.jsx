@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { useUploadedFiles } from '@/context/UploadedFilesContext';
 import Topbar from '@/components/Topbar';
 import {
   Eye,
@@ -19,12 +18,14 @@ import {
 } from 'lucide-react';
 
 function FilePasswords() {
-  const { t, userProfile } = useLanguage();
-  const { uploadedFiles, setUploadedFiles } = useUploadedFiles();
+  const { t } = useLanguage();
 
+  const [files, setFiles] = useState([]);
+  const [tags, setTags] = useState([]); // ใช้ทำ tag filter + color map
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
 
+  const [revealedPasswords, setRevealedPasswords] = useState({}); // fileId -> password จริง (ดึงมาเฉพาะตอนกดดู)
   const [visiblePasswords, setVisiblePasswords] = useState({});
 
   // ยืนยันตัวตนด้วยรหัสผ่านบัญชีเพียงครั้งเดียวต่อการเข้าหน้านี้ 1 ครั้ง
@@ -38,52 +39,47 @@ function FilePasswords() {
   const [editingFileId, setEditingFileId] = useState(null);
   const [newPassword, setNewPassword] = useState('');
 
-  // มีไฟล์ที่ตั้งรหัสผ่านไว้อย่างน้อย 1 ไฟล์หรือไม่
-  const hasAnyProtectedFile = uploadedFiles.some(
-    (file) => file.password && file.password !== 'No Password'
-  );
+  const fetchFiles = async () => {
+    try {
+      const res = await fetch('/api/files?hasPassword=true');
+      if (res.ok) {
+        const data = await res.json();
+        setFiles(data);
+        // มีไฟล์ที่ตั้งรหัสผ่านไว้อย่างน้อย 1 ไฟล์ -> ขอรหัสผ่านบัญชีก่อนครั้งเดียว
+        if (data.length > 0) setShowAuthModal(true);
+      }
+    } catch (e) { }
+  };
 
-  // เมื่อเข้าหน้านี้ (mount) ให้ขอรหัสผ่านบัญชีครั้งเดียว ถ้ามีไฟล์ที่ตั้งรหัสผ่านไว้
+  const fetchTags = async () => {
+    try {
+      const res = await fetch('/api/tags');
+      if (res.ok) setTags(await res.json());
+    } catch (e) { }
+  };
+
   useEffect(() => {
-    if (hasAnyProtectedFile) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time check on mount, not deriving state from props/state
-      setShowAuthModal(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing with an external system (the API) on mount, not deriving state from props/state
+    fetchFiles();
+    fetchTags();
   }, []);
 
-  // ฟังก์ชันสำหรับเปิดไฟล์ในแท็บใหม่
+  const getTagColor = (tagName) => tags.find((t) => t.name === tagName)?.color || 'var(--accent, #146356)';
+
+  // ฟังก์ชันสำหรับเปิดไฟล์ในแท็บใหม่ (ผ่าน /api/files/{id}/serve ที่เช็คสิทธิ์เจ้าของไฟล์แล้ว)
   const openFileNative = (file) => {
-    let fileUrl = file.previewUrl || file.url;
-
-    // ถ้ามี rawFile ให้สร้าง Object URL ใหม่เสมอ
-    if (file.rawFile) {
-      fileUrl = URL.createObjectURL(file.rawFile);
-    }
-
-    if (!fileUrl) {
+    const newWindow = window.open(file.src, '_blank');
+    if (!newWindow) {
       alert(t('fileAddressMissing'));
-      return;
-    }
-
-    const windowFeatures = 'width=1000,height=750,resizable=yes,scrollbars=yes,status=yes';
-    const newWindow = window.open(fileUrl, '_blank', windowFeatures);
-
-    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-      window.open(fileUrl, '_blank');
     }
   };
 
   // จัดการเมื่อผู้ใช้กดคลิกที่ชื่อไฟล์เพื่อเปิดดู
   const handleOpenFileClick = (file) => {
-    const hasPassword = file.password && file.password !== 'No Password';
-
-    // ถ้าไม่มีรหัสผ่าน หรือ ยืนยันตัวตนด้วยรหัสบัญชีไปแล้ว -> เปิดไฟล์ได้ทันที
-    if (!hasPassword || isAuthenticated) {
+    if (isAuthenticated) {
       openFileNative(file);
       return;
     }
-
     // ถ้ายังไม่ได้ยืนยันตัวตน -> เรียก Modal ให้ใส่รหัสผ่านบัญชีผู้ใช้ก่อน (ครั้งเดียว)
     setPendingOpenFile(file);
     setAuthInput('');
@@ -91,14 +87,7 @@ function FilePasswords() {
     setShowAuthModal(true);
   };
 
-  const handleToggleEye = (file) => {
-    const hasPassword = file.password && file.password !== 'No Password';
-
-    if (!hasPassword) {
-      setVisiblePasswords((prev) => ({ ...prev, [file.id]: !prev[file.id] }));
-      return;
-    }
-
+  const handleToggleEye = async (file) => {
     if (!isAuthenticated) {
       setAuthInput('');
       setAuthError('');
@@ -106,13 +95,39 @@ function FilePasswords() {
       return;
     }
 
-    setVisiblePasswords((prev) => ({ ...prev, [file.id]: !prev[file.id] }));
+    // กำลังจะซ่อน ไม่ต้อง fetch อะไรใหม่
+    if (visiblePasswords[file.id]) {
+      setVisiblePasswords((prev) => ({ ...prev, [file.id]: false }));
+      return;
+    }
+
+    // กำลังจะเปิดเผย ดึงรหัสผ่านจริงมาก่อนถ้ายังไม่เคยดึง
+    if (!(file.id in revealedPasswords)) {
+      try {
+        const res = await fetch(`/api/files/${file.id}/password`);
+        if (res.ok) {
+          const data = await res.json();
+          setRevealedPasswords((prev) => ({ ...prev, [file.id]: data.password }));
+        }
+      } catch (e) { }
+    }
+    setVisiblePasswords((prev) => ({ ...prev, [file.id]: true }));
   };
 
   // ยืนยันตัวตนด้วย "รหัสผ่านของบัญชีผู้ใช้" เพียงครั้งเดียวต่อการเข้าหน้านี้
   // เมื่อยืนยันสำเร็จแล้ว จะสามารถดู/จัดการรหัสผ่านของทุกไฟล์ได้โดยไม่ต้องกรอกซ้ำอีก
-  const handleVerifyAccountPassword = () => {
-    if (authInput === userProfile.password) {
+  const handleVerifyAccountPassword = async () => {
+    setAuthError('');
+    try {
+      const res = await fetch('/api/profile/verify-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: authInput }),
+      });
+      if (!res.ok) {
+        setAuthError(t('passwordIncorrect'));
+        return;
+      }
       setIsAuthenticated(true);
       setShowAuthModal(false);
       setAuthInput('');
@@ -123,26 +138,36 @@ function FilePasswords() {
         openFileNative(pendingOpenFile);
         setPendingOpenFile(null);
       }
-    } else {
+    } catch (e) {
       setAuthError(t('passwordIncorrect'));
     }
   };
 
-  const handleSaveNewPassword = (fileId) => {
+  const handleSaveNewPassword = async (fileId) => {
     if (!newPassword.trim()) return;
-
-    setUploadedFiles((prev) =>
-      prev.map((f) => (f.id === fileId ? { ...f, password: newPassword } : f))
-    );
+    try {
+      const res = await fetch(`/api/files/${fileId}/password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPassword }),
+      });
+      if (res.ok) {
+        setRevealedPasswords((prev) => ({ ...prev, [fileId]: newPassword }));
+        setVisiblePasswords((prev) => ({ ...prev, [fileId]: true }));
+      }
+    } catch (e) { }
     setEditingFileId(null);
     setNewPassword('');
   };
 
-  const filteredFiles = uploadedFiles.filter((file) => {
-    const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTag = selectedTag ? file.tag === selectedTag : true;
-    return matchesSearch && matchesTag;
-  });
+  const filteredFiles = files
+    .filter((file) => {
+      const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTag = selectedTag ? file.tags.includes(selectedTag) : true;
+      return matchesSearch && matchesTag;
+    })
+    // sort ตาม tag แรกของแต่ละไฟล์ (ไฟล์ที่ไม่มีแท็กไปอยู่ท้ายสุด)
+    .sort((a, b) => (a.tags[0] || '￿').localeCompare(b.tags[0] || '￿'));
 
   return (
     <div className="legacy-user-page passwords-page-wrapper">
@@ -167,11 +192,9 @@ function FilePasswords() {
                 onChange={(e) => setSelectedTag(e.target.value)}
               >
                 <option value="">{t('allTags')}</option>
-                <option value="Document">{t('document')}</option>
-                <option value="Work">{t('work')}</option>
-                <option value="Study">{t('study')}</option>
-                <option value="Personal">{t('personal')}</option>
-                <option value="Unassigned">{t('unassigned')}</option>
+                {tags.map((tg) => (
+                  <option key={tg.id} value={tg.name}>{tg.name}</option>
+                ))}
               </select>
               <ChevronDown size={16} className="select-icon" />
             </div>
@@ -190,10 +213,10 @@ function FilePasswords() {
               <tbody>
                 {filteredFiles.length > 0 ? (
                   filteredFiles.map((file) => {
-                    const hasPassword = file.password && file.password !== 'No Password';
-                    const isUnlocked = hasPassword && isAuthenticated;
+                    const isUnlocked = isAuthenticated;
                     const isVisible = visiblePasswords[file.id];
                     const isEditing = editingFileId === file.id;
+                    const displayedPassword = revealedPasswords[file.id];
 
                     return (
                       <tr key={file.id}>
@@ -210,15 +233,22 @@ function FilePasswords() {
                         </td>
 
                         <td>
-                          <span className={`tag-badge tag-${file.tag?.toLowerCase() || 'default'}`}>
-                            {file.tag ? ({ Document: t('document'), Work: t('work'), Study: t('study'), Personal: t('personal'), Unassigned: t('unassigned') }[file.tag] || file.tag) : t('unassigned')}
-                          </span>
+                          {file.tags.length > 0 ? (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                              {file.tags.map((tagName) => (
+                                <span key={tagName} className="tag-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: getTagColor(tagName), display: 'inline-block' }}></span>
+                                  {tagName}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="tag-badge tag-default">{t('unassigned')}</span>
+                          )}
                         </td>
 
                         <td className="password-cell">
-                          {!hasPassword ? (
-                            <span className="no-password-text">{t('noPassword')}</span>
-                          ) : isEditing ? (
+                          {isEditing ? (
                             <div className="inline-edit-box">
                               <input
                                 type="text"
@@ -247,7 +277,7 @@ function FilePasswords() {
                               ) : (
                                 <Lock size={14} className="lock-icon" />
                               )}
-                              <span>{isVisible ? file.password : '••••••••••••'}</span>
+                              <span>{isVisible && displayedPassword ? displayedPassword : '••••••••••••'}</span>
                             </div>
                           )}
                         </td>
@@ -265,12 +295,12 @@ function FilePasswords() {
                               </button>
                             )}
 
-                            {hasPassword && isUnlocked && !isEditing && (
+                            {isUnlocked && !isEditing && (
                               <button
                                 className="btn-change-password"
                                 onClick={() => {
                                   setEditingFileId(file.id);
-                                  setNewPassword(file.password);
+                                  setNewPassword(displayedPassword || '');
                                 }}
                               >
                                 <Edit3 size={14} /> {t('changePassword')}

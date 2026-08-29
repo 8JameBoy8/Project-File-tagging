@@ -24,6 +24,9 @@ model File {
   size       Int
   uploadedAt DateTime @default(now())
   tags       FileTag[]
+  userId     String?         // เจ้าของไฟล์ (nullable เผื่อไฟล์เก่าก่อนมีระบบ auth)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  password   String?         // รหัสปลดล็อกไฟล์ เก็บ plaintext ตั้งใจ (ต้องกดดูค่าเดิมได้) ไม่ใช่รหัสผ่านบัญชี
 }
 
 model FileTag {
@@ -46,6 +49,7 @@ model User {
   createdAt     DateTime  @default(now())
   updateAt      DateTime  @updatedAt
   deletedAt     DateTime?
+  files         File[]
 }
 
 enum Role {

@@ -1,18 +1,23 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { v4 as uuidv4 } from 'uuid'
 import fs from 'fs'
 import path from 'path'
 import { getFileType, getFileExtension } from '@/lib/fileUtils'
+import { requireAuth } from '@/lib/auth/middleware'
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads')
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof NextResponse) return authResult
+
     const { searchParams } = new URL(request.url)
     const tagIds = searchParams.getAll('tagId')
     const sort = searchParams.get('sort') || 'date-desc'
     const untagged = searchParams.get('untagged') === 'true'
+    const hasPasswordOnly = searchParams.get('hasPassword') === 'true'
 
     try {
         let orderBy: Prisma.FileOrderByWithRelationInput | Prisma.FileOrderByWithRelationInput[] = { uploadedAt: 'desc' }
@@ -20,7 +25,7 @@ export async function GET(request: Request) {
         if (sort === 'type') orderBy = [{ type: 'asc' }, { name: 'asc' }]
         if (sort === 'name') orderBy = { name: 'asc' }
 
-        const where: Prisma.FileWhereInput = {}
+        const where: Prisma.FileWhereInput = { userId: authResult.userId }
         if (untagged) {
             where.tags = { none: {} }
         } else if (tagIds.length > 0) {
@@ -29,6 +34,9 @@ export async function GET(request: Request) {
                     tagId: { in: tagIds }
                 }
             }
+        }
+        if (hasPasswordOnly) {
+            where.password = { not: null }
         }
 
         const files = await prisma.file.findMany({
@@ -44,12 +52,17 @@ export async function GET(request: Request) {
         })
 
         // Format the response to match the shape expected by the frontend
-        const formattedFiles = files.map(f => ({
-            ...f,
-            tags: f.tags.map(t => t.tag.name),
-            // We will create an API for viewing the file later, e.g. /api/files/serve/[id]
-            src: `/api/files/${f.id}/serve`
-        }))
+        // ไม่ส่ง password จริงออกไปใน list เด็ดขาด ส่งแค่ hasPassword ให้ UI เช็ค
+        const formattedFiles = files.map(f => {
+            const { password, ...rest } = f
+            return {
+                ...rest,
+                tags: f.tags.map(t => t.tag.name),
+                hasPassword: !!password,
+                // We will create an API for viewing the file later, e.g. /api/files/serve/[id]
+                src: `/api/files/${f.id}/serve`
+            }
+        })
 
         return NextResponse.json(formattedFiles)
     } catch (error) {
@@ -58,11 +71,15 @@ export async function GET(request: Request) {
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof NextResponse) return authResult
+
     try {
         const formData = await request.formData()
         const file = formData.get('file') as File | null
         const tagsParam = formData.get('tags') as string | null
+        const passwordParam = formData.get('password') as string | null
 
         if (!file) {
             return NextResponse.json({ error: 'File is required' }, { status: 400 })
@@ -108,6 +125,8 @@ export async function POST(request: Request) {
                 ext: fileExt,
                 path: newFilename,
                 size: file.size,
+                userId: authResult.userId,
+                password: passwordParam && passwordParam.length > 0 ? passwordParam : null,
                 tags: {
                     create: tagsData
                 }
@@ -119,7 +138,8 @@ export async function POST(request: Request) {
             }
         })
 
-        return NextResponse.json(newFile, { status: 201 })
+        const { password, ...rest } = newFile
+        return NextResponse.json({ ...rest, hasPassword: !!password }, { status: 201 })
     } catch (error) {
         console.error('Upload error', error)
         return NextResponse.json({ error: 'Upload failed' }, { status: 500 })

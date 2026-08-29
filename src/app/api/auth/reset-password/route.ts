@@ -49,8 +49,8 @@ export async function POST(req:NextRequest) {
     } catch (error) {
         if (error instanceof z.ZodError) {
             return NextResponse.json(
-                { error: { code: 'INTERNAL_ERROR', message: 'เกิดข้อผิดพลาด กรุณาลองใหม่'}},
-                { status: 500}
+                { error: { code: 'VALIDATION_ERROR', message: error.issues[0].message}},
+                { status: 400}
             )
         }
         console.error('Reset password error:', error)

@@ -30,6 +30,13 @@ export default function Setting() {
     setPendingLang(null);
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) { }
+    router.push('/auth/login');
+  };
+
   return (
     <div className="legacy-user-page setting-page-container">
       <Topbar title={t('setting')} />
@@ -112,7 +119,7 @@ export default function Setting() {
             <p>{t('logoutConfirm')}</p>
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setShowLogoutModal(false)}>{t('cancelBtn')}</button>
-              <button className="btn-danger" onClick={() => alert(t('loggedOut'))}>{t('logout')}</button>
+              <button className="btn-danger" onClick={handleLogout}>{t('logout')}</button>
             </div>
           </div>
         </div>

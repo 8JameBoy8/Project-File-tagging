@@ -1,20 +1,23 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import fs from 'fs'
 import path from 'path'
-import { getFileExtension } from '@/lib/fileUtils'
+import { requireAuth } from '@/lib/auth/middleware'
 
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads')
 
 export async function GET(
-    request: Request,
+    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof NextResponse) return authResult
+
     try {
         const { id } = await params
         const file = await prisma.file.findUnique({ where: { id } })
 
-        if (!file) return new NextResponse('Not found', { status: 404 })
+        if (!file || file.userId !== authResult.userId) return new NextResponse('Not found', { status: 404 })
 
         const filepath = path.join(UPLOAD_DIR, file.path)
         if (!fs.existsSync(filepath)) return new NextResponse('Not found', { status: 404 })
@@ -35,7 +38,7 @@ export async function GET(
         return new NextResponse(buffer, {
             headers: {
                 'Content-Type': mime,
-                'Cache-Control': 'public, max-age=31536000'
+                'Cache-Control': 'private, max-age=31536000'
             }
         })
     } catch (error) {

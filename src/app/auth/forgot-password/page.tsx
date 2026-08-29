@@ -5,28 +5,52 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import InputField from "@/components/InputField";
 import AuthButton from "@/components/AuthButton";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ForgotPasswordPage() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState(1);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
 
-  const handleSendEmail = (e: React.FormEvent) => {
+  const handleSendEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStep(2); 
+    setError("");
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/auth/forget-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.error?.message || t("sendOtpFailedMsg"));
+        return;
+      }
+      setStep(2);
+    } catch {
+      setError(t("genericErrorMsg"));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleVerifyOtp = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("ยืนยัน OTP สำเร็จ! กำลังพาไปหน้าตั้งรหัสผ่านใหม่...");
-    router.push("/auth/change-password");
+    // ไม่มี endpoint แยกไว้ verify OTP เดี่ยวๆ — พา email+otp ไปให้หน้าตั้งรหัสผ่านใหม่
+    // เช็ค OTP จริงพร้อมกับตั้งรหัสผ่านใหม่ทีเดียวที่ /api/auth/reset-password
+    const params = new URLSearchParams({ email, otp });
+    router.push(`/auth/change-password?${params.toString()}`);
   };
 
   return (
     <div className="min-h-screen bg-[#bce3f9] flex flex-col font-sans">
       <header className="bg-white/60 backdrop-blur-sm py-4 px-8 flex justify-end shadow-sm">
-        <h1 className="text-xl font-semibold text-gray-700">Forgot Password</h1>
+        <h1 className="text-xl font-semibold text-gray-700">{t("forgotPasswordPageTitle")}</h1>
       </header>
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 relative mt-10">
@@ -39,26 +63,27 @@ export default function ForgotPasswordPage() {
           </div>
           <div className="mt-10 text-center">
             <h2 className="text-2xl font-bold text-black mb-2 uppercase tracking-wider">
-              {step === 1 ? "FORGOT PASSWORD" : "ENTER OTP"}
+              {step === 1 ? t("forgotPasswordHeading") : t("enterOtpHeading")}
             </h2>
             <p className="text-gray-500 text-sm mb-6">
-              {step === 1 ? "กรุณากรอกอีเมลของคุณเพื่อรับรหัส OTP สำหรับรีเซ็ตรหัสผ่าน" : `รหัส OTP 6 หลักได้ถูกส่งไปยัง ${email} แล้ว`}
+              {step === 1 ? t("forgotPasswordDesc") : t("otpSentToMsg", { email })}
             </p>
           </div>
           {step === 1 ? (
             <form onSubmit={handleSendEmail} className="flex flex-col gap-5">
               <InputField label="Gmail" type="email" placeholder="Example@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              <AuthButton text="รับรหัส OTP" />
+              {error && <p className="text-sm text-red-500 text-center -mb-2">{error}</p>}
+              <AuthButton text={submitting ? t("sendingOtpBtn") : t("receiveOtpBtn")} />
             </form>
           ) : (
             <form onSubmit={handleVerifyOtp} className="flex flex-col gap-5">
-              <InputField label="รหัส OTP" type="text" placeholder="123456" value={otp} onChange={(e) => setOtp(e.target.value)} maxLength={6} required />
-              <AuthButton text="ยืนยัน OTP" />
-              <button type="button" onClick={() => setStep(1)} className="text-sm text-gray-500 hover:text-gray-700 underline mt-2">เปลี่ยนอีเมล</button>
+              <InputField label={t("otpLabel")} type="text" placeholder="123456" value={otp} onChange={(e) => setOtp(e.target.value)} maxLength={6} required />
+              <AuthButton text={t("verifyOtpBtn")} />
+              <button type="button" onClick={() => setStep(1)} className="text-sm text-gray-500 hover:text-gray-700 underline mt-2">{t("changeEmailBtn")}</button>
             </form>
           )}
           <div className="flex justify-center w-full mt-6 pt-6 border-t border-gray-100 text-sm">
-            <Link href="/auth/login" className="text-blue-500 hover:text-blue-700 font-medium transition-colors">&larr; กลับไปหน้าเข้าสู่ระบบ</Link>
+            <Link href="/auth/login" className="text-blue-500 hover:text-blue-700 font-medium transition-colors">&larr; {t("backToLoginLink")}</Link>
           </div>
         </div>
       </main>

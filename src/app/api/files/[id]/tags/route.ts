@@ -1,12 +1,21 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { requireAuth } from '@/lib/auth/middleware'
 
 export async function PUT(
-    request: Request,
+    request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof NextResponse) return authResult
+
     try {
         const { id } = await params
+        const existing = await prisma.file.findUnique({ where: { id } })
+        if (!existing || existing.userId !== authResult.userId) {
+            return NextResponse.json({ error: 'File not found' }, { status: 404 })
+        }
+
         const body = await request.json()
         const { tagIds } = body // should be string[]
 
@@ -39,9 +48,11 @@ export async function PUT(
             }
         })
 
+        const { password, ...rest } = updatedFile!
         return NextResponse.json({
-            ...updatedFile,
+            ...rest,
             tags: updatedFile?.tags.map(t => t.tag.name),
+            hasPassword: !!password,
             src: `/api/files/${updatedFile?.id}/serve`
         })
     } catch (error) {

@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import Topbar from '@/components/Topbar'
+import { useLanguage } from '@/context/LanguageContext'
 
 type Tag = { id: string, name: string, color: string }
-type FileItem = { id: string, name: string, ext: string, type: string, tags: string[], src: string }
+type FileItem = { id: string, name: string, ext: string, type: string, tags: string[], src: string, hasPassword: boolean }
 
 const NO_TAG_ID = '__no_tag__'
 
 export default function ManageTagPage() {
+    const { t } = useLanguage()
     const [tags, setTags] = useState<Tag[]>([])
     const [selectedTagId, setSelectedTagId] = useState<string>('')
     const [files, setFiles] = useState<FileItem[]>([])
@@ -30,6 +32,13 @@ export default function ManageTagPage() {
     const [saving, setSaving] = useState(false)
 
     const selectedTag = tags.find(t => t.id === selectedTagId)
+
+    const sortLabels: Record<string, string> = {
+        'date-desc': t('sortNewest'),
+        'date-asc': t('sortOldest'),
+        'type': t('sortByType'),
+        'name': t('sortByName'),
+    }
 
     const fetchTags = async () => {
         try {
@@ -78,10 +87,10 @@ export default function ManageTagPage() {
 
     const handleDeleteTag = async () => {
         if (!selectedTagId) {
-            alert('Please select a tag to delete')
+            alert(t('pleaseSelectTagToDelete'))
             return
         }
-        if (confirm('Are you sure you want to delete this tag?')) {
+        if (confirm(t('confirmDeleteTagMsg'))) {
             try {
                 await fetch(`/api/tags/${selectedTagId}`, { method: 'DELETE' })
                 setSelectedTagId('')
@@ -118,7 +127,7 @@ export default function ManageTagPage() {
 
     const startPickMode = () => {
         if (!selectedTagId) {
-            alert('กรุณาเลือกแท็กที่ต้องการเพิ่มไฟล์ก่อน')
+            alert(t('pleaseSelectTagFirst'))
             return
         }
         setPickMode(true)
@@ -141,7 +150,7 @@ export default function ManageTagPage() {
 
     const handleConfirmAdd = async () => {
         if (selectedFileIds.size === 0) {
-            alert('กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์')
+            alert(t('selectAtLeastOne'))
             return
         }
         setSaving(true)
@@ -156,7 +165,7 @@ export default function ManageTagPage() {
                 setSelectedFileIds(new Set())
                 fetchFiles()
             } else {
-                alert('เพิ่มไฟล์เข้าแท็กไม่สำเร็จ')
+                alert(t('addFileToTagFailed'))
             }
         } catch (e) { } finally {
             setSaving(false)
@@ -173,21 +182,21 @@ export default function ManageTagPage() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', paddingBottom: 30 }}>
-            <Topbar title="Manage Tag" />
+            <Topbar title={t('manageTag')} />
             <div style={{ padding: '20px 40px 0', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 20 }}>
                     <div style={{ backgroundColor: 'var(--surface-alt)', border: '1px solid var(--line)', padding: '10px 15px', borderRadius: 8, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
                         <select style={{ width: 170, padding: '8px 12px', border: '1px solid var(--line)', borderRadius: 6, outline: 'none', fontSize: 14 }} value={selectedTagId} onChange={e => setSelectedTagId(e.target.value)}>
-                            <option value="">เลือกแท็กที่ต้องการเพิ่มไฟล์...</option>
+                            <option value="">{t('selectTagToAddFiles')}</option>
                             {tags.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                         </select>
 
                         {selectedTagId && !isEditing && (
                             <>
                                 <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid var(--line)', backgroundColor: editColor }}></div>
-                                <div onClick={() => setIsEditing(true)} style={{ width: 32, height: 32, backgroundColor: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--line)' }} title="Edit Tag">✏️</div>
-                                <div onClick={handleDeleteTag} style={{ width: 32, height: 32, backgroundColor: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--line)', color: 'red' }} title="Delete Tag">🗑️</div>
+                                <div onClick={() => setIsEditing(true)} style={{ width: 32, height: 32, backgroundColor: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--line)' }} title={t('editTagTitle')}>✏️</div>
+                                <div onClick={handleDeleteTag} style={{ width: 32, height: 32, backgroundColor: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '1px solid var(--line)', color: 'red' }} title={t('deleteTagTitle')}>🗑️</div>
                             </>
                         )}
 
@@ -195,20 +204,20 @@ export default function ManageTagPage() {
                             <>
                                 <input type="text" value={editName} onChange={e => setEditName(e.target.value)} style={{ padding: '6px 8px', width: 120, borderRadius: 4, border: '1px solid #ccc' }} />
                                 <input type="color" value={editColor} onChange={e => setEditColor(e.target.value)} style={{ width: 30, height: 30, padding: 0, border: 'none' }} />
-                                <button onClick={handleUpdateTag} style={{ background: 'var(--ok-soft)', color: 'var(--ok)', padding: '6px 12px', borderRadius: 4, fontWeight: 'bold' }}>Save</button>
-                                <button onClick={() => setIsEditing(false)} style={{ background: '#eee', padding: '6px 12px', borderRadius: 4 }}>Cancel</button>
+                                <button onClick={handleUpdateTag} style={{ background: 'var(--ok-soft)', color: 'var(--ok)', padding: '6px 12px', borderRadius: 4, fontWeight: 'bold' }}>{t('save')}</button>
+                                <button onClick={() => setIsEditing(false)} style={{ background: '#eee', padding: '6px 12px', borderRadius: 4 }}>{t('cancelBtn')}</button>
                             </>
                         )}
 
                         {!isEditing && !pickMode && (
-                            <button onClick={startPickMode} title="เพิ่มไฟล์เข้าแท็กนี้" style={{ width: 32, height: 32, background: 'var(--accent)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 'bold', lineHeight: 1 }}>+</button>
+                            <button onClick={startPickMode} title={t('addFileToTagTitle')} style={{ width: 32, height: 32, background: 'var(--accent)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 'bold', lineHeight: 1 }}>+</button>
                         )}
 
                         {pickMode && (
                             <>
-                                <span style={{ fontSize: 13, color: 'var(--muted)' }}>เลือกแล้ว {selectedFileIds.size} ไฟล์</span>
-                                <button onClick={handleConfirmAdd} disabled={saving} style={{ background: 'var(--ok-soft)', color: 'var(--ok)', padding: '6px 14px', borderRadius: 6, fontWeight: 'bold' }}>Confirm</button>
-                                <button onClick={cancelPickMode} style={{ background: '#eee', padding: '6px 14px', borderRadius: 6 }}>Cancel</button>
+                                <span style={{ fontSize: 13, color: 'var(--muted)' }}>{t('selectedCountFiles', { count: selectedFileIds.size })}</span>
+                                <button onClick={handleConfirmAdd} disabled={saving} style={{ background: 'var(--ok-soft)', color: 'var(--ok)', padding: '6px 14px', borderRadius: 6, fontWeight: 'bold' }}>{t('confirmBtn')}</button>
+                                <button onClick={cancelPickMode} style={{ background: '#eee', padding: '6px 14px', borderRadius: 6 }}>{t('cancelBtn')}</button>
                             </>
                         )}
                     </div>
@@ -216,13 +225,13 @@ export default function ManageTagPage() {
                     <div style={{ display: 'flex', gap: 10, position: 'relative' }}>
                         <div style={{ position: 'relative' }}>
                             <button onClick={() => { setSortOpen(!sortOpen); setTagOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: '9px 14px', fontSize: 13.5, fontWeight: 500, boxShadow: 'var(--shadow)' }}>
-                                Sort: {sortMode === 'date-desc' ? 'อัปโหลดล่าสุด' : sortMode === 'date-asc' ? 'เก่าสุด' : sortMode === 'type' ? 'ประเภท' : 'ชื่อ'}
+                                {t('sortLabel')}: {sortLabels[sortMode]}
                             </button>
                             {sortOpen && (
                                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, zIndex: 20, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, boxShadow: 'var(--shadow)', padding: 8, minWidth: 200 }}>
                                     {['date-desc', 'date-asc', 'type', 'name'].map(s => (
                                         <div key={s} onClick={() => { setSortMode(s); setSortOpen(false) }} style={{ padding: '8px 10px', borderRadius: 6, cursor: 'pointer', background: sortMode === s ? 'var(--surface-alt)' : 'transparent', fontWeight: sortMode === s ? 'bold' : 'normal', color: sortMode === s ? 'var(--accent)' : 'inherit' }}>
-                                            {s === 'date-desc' ? 'ล่าสุด' : s === 'date-asc' ? 'เก่าสุด' : s === 'type' ? 'ตามประเภท' : 'ตามชื่อ'}
+                                            {sortLabels[s]}
                                         </div>
                                     ))}
                                 </div>
@@ -231,7 +240,7 @@ export default function ManageTagPage() {
 
                         <div style={{ position: 'relative' }}>
                             <button onClick={() => { setTagOpen(!tagOpen); setSortOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 8, padding: '9px 14px', fontSize: 13.5, fontWeight: 500, boxShadow: 'var(--shadow)' }}>
-                                Filter Tag {activeTags.size > 0 && <span style={{ background: 'var(--accent)', color: '#fff', borderRadius: 20, padding: '2px 6px', fontSize: 10 }}>{activeTags.size}</span>}
+                                {t('filterTag')} {activeTags.size > 0 && <span style={{ background: 'var(--accent)', color: '#fff', borderRadius: 20, padding: '2px 6px', fontSize: 10 }}>{activeTags.size}</span>}
                             </button>
                             {tagOpen && (
                                 <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, zIndex: 20, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, boxShadow: 'var(--shadow)', padding: 8, minWidth: 220 }}>
@@ -241,27 +250,27 @@ export default function ManageTagPage() {
                                             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13 }}>{t.name}</span>
                                         </label>
                                     ))}
-                                    {tags.length === 0 && <div style={{ padding: 10, color: 'var(--muted)', fontSize: 12.5 }}>ไม่มีแท็ก</div>}
+                                    {tags.length === 0 && <div style={{ padding: 10, color: 'var(--muted)', fontSize: 12.5 }}>{t('noTagsExist')}</div>}
                                     <div style={{ borderTop: '1px solid var(--line)', marginTop: 4, paddingTop: 8 }}>
                                         <label style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', cursor: 'pointer' }}>
                                             <input type="checkbox" checked={activeTags.has(NO_TAG_ID)} onChange={() => toggleFilterTag(NO_TAG_ID)} style={{ accentColor: 'var(--accent)' }} />
-                                            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13 }}>ไฟล์ที่ไม่มีแท็ก</span>
+                                            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13 }}>{t('filesWithNoTag')}</span>
                                         </label>
                                     </div>
                                     <div style={{ borderTop: '1px solid var(--line)', marginTop: 4, paddingTop: 8, display: 'flex', justifyContent: 'space-between' }}>
-                                        <button onClick={() => setActiveTags(new Set())} style={{ color: 'var(--muted)', fontSize: 12, textDecoration: 'underline' }}>ล้างตัวเลือก</button>
+                                        <button onClick={() => setActiveTags(new Set())} style={{ color: 'var(--muted)', fontSize: 12, textDecoration: 'underline' }}>{t('clearSelection')}</button>
                                     </div>
                                 </div>
                             )}
                         </div>
 
-                        <div style={{ padding: '8px 12px', background: 'var(--surface-alt)', border: '1px solid var(--line)', borderRadius: 6 }}>Files: {files.length}</div>
+                        <div style={{ padding: '8px 12px', background: 'var(--surface-alt)', border: '1px solid var(--line)', borderRadius: 6 }}>{t('filesCountLabel', { count: files.length })}</div>
                     </div>
                 </div>
 
                 {pickMode && (
                     <div style={{ marginBottom: 14, fontSize: 13, color: 'var(--muted)' }}>
-                        คลิกไฟล์ด้านล่างเพื่อเลือก แล้วกด Confirm เพื่อเพิ่มเข้าแท็ก {selectedTag ? `"${selectedTag.name}"` : ''}
+                        {t('clickFilesToSelectMsg', { tag: selectedTag ? `"${selectedTag.name}"` : '' })}
                     </div>
                 )}
 
@@ -287,10 +296,11 @@ export default function ManageTagPage() {
                                     }}>{isSelected ? '✓' : ''}</div>
                                 )}
                                 {alreadyTagged && (
-                                    <div style={{ position: 'absolute', top: 8, left: 8, background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: 10, padding: '3px 7px', borderRadius: 20, zIndex: 2 }}>มีแท็กนี้แล้ว</div>
+                                    <div style={{ position: 'absolute', top: 8, left: 8, background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: 10, padding: '3px 7px', borderRadius: 20, zIndex: 2 }}>{t('alreadyHasThisTag')}</div>
                                 )}
                                 <div style={{ backgroundColor: '#dee2e6', borderRadius: 6, flexGrow: 1, marginBottom: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, color: '#adb5bd', overflow: 'hidden' }}>
-                                    {f.type === 'image' ? <img src={f.src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : getFileIcon(f)}
+                                    {/* ไฟล์รูปที่มีรหัสผ่านไม่โชว์ thumbnail จริง แสดง icon ล็อกแทน */}
+                                    {f.hasPassword ? '🔒' : f.type === 'image' ? <img src={f.src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : getFileIcon(f)}
                                 </div>
                                 <div style={{ textAlign: 'center', fontWeight: 500, fontSize: 14, color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</div>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6, justifyContent: 'center' }}>
@@ -299,7 +309,7 @@ export default function ManageTagPage() {
                             </div>
                         )
                     })}
-                    {files.length === 0 && <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--muted)', padding: 40 }}>ไม่พบไฟล์</div>}
+                    {files.length === 0 && <div style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--muted)', padding: 40 }}>{t('noFilesFound')}</div>}
                 </div>
 
             </div>

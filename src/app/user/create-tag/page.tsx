@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Topbar from '@/components/Topbar'
+import { useLanguage } from '@/context/LanguageContext'
 
 type Tag = {
     id: string
@@ -10,6 +11,7 @@ type Tag = {
 }
 
 export default function CreateTagPage() {
+    const { t } = useLanguage()
     const [createdTags, setCreatedTags] = useState<Tag[]>([])
     const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set())
     const [name, setName] = useState('')
@@ -29,7 +31,7 @@ export default function CreateTagPage() {
 
     const handleCreate = async () => {
         if (!name.trim()) {
-            alert('กรุณากรอกชื่อ Name Tag ก่อนทำการ Create')
+            alert(t('pleaseEnterTagName'))
             return
         }
         try {
@@ -45,10 +47,10 @@ export default function CreateTagPage() {
                 setColor('#d9d9d9')
             } else {
                 const err = await res.json()
-                alert(err.error || 'Failed to create tag')
+                alert(err.error || t('createTagFailed'))
             }
         } catch (e) {
-            alert('Error creating tag')
+            alert(t('createTagError'))
         }
     }
 
@@ -61,10 +63,10 @@ export default function CreateTagPage() {
 
     const handleDelete = async () => {
         if (selectedTags.size === 0) {
-            alert('กรุณาเลือกแท็กที่ต้องการลบด้านล่างก่อนครับ')
+            alert(t('pleaseSelectTagsToDeleteBelow'))
             return
         }
-        if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบแท็กที่เลือกทั้ง ${selectedTags.size} แท็ก?`)) return
+        if (!confirm(t('confirmDeleteTagsMsg', { count: selectedTags.size }))) return
 
         for (const id of Array.from(selectedTags)) {
             try {
@@ -80,35 +82,35 @@ export default function CreateTagPage() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <Topbar title="Create Tag" />
+            <Topbar title={t('createTag')} />
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 40px', display: 'flex', flexDirection: 'column' }}>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20, width: '100%', maxWidth: 1100, margin: '0 auto 20px' }}>
                     <div style={{ backgroundColor: '#d9d9d9', border: '1px solid #333', padding: '5px 15px', fontSize: 12, borderRadius: 4 }}>
-                        Total tag : <span>{createdTags.length}</span>
+                        {t('totalTagLabel', { count: createdTags.length })}
                     </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'row', gap: 40, marginBottom: 40, width: '100%', maxWidth: 1100, margin: '0 auto 40px', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: 300, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', marginBottom: 40 }}>
-                            <label style={{ fontSize: 16, whiteSpace: 'nowrap' }}>Name Tag</label>
-                            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Type name here..." style={{ flexGrow: 1, height: 35, backgroundColor: '#d9d9d9', border: '1px solid #333', borderRadius: 8, padding: '0 10px', fontSize: 16 }} />
+                            <label style={{ fontSize: 16, whiteSpace: 'nowrap' }}>{t('nameTagLabel')}</label>
+                            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder={t('nameTagPlaceholder')} style={{ flexGrow: 1, height: 35, backgroundColor: '#d9d9d9', border: '1px solid #333', borderRadius: 8, padding: '0 10px', fontSize: 16 }} />
                         </div>
                         <div style={{ width: 150, height: 150, backgroundColor: color, borderRadius: '50%', marginBottom: 15, border: '2px solid transparent', transition: 'background-color 0.3s' }}></div>
-                        <div style={{ fontSize: 16 }}>{name || 'Name Tag'}</div>
+                        <div style={{ fontSize: 16 }}>{name || t('nameTagLabel')}</div>
                     </div>
 
                     <div style={{ flex: 1, minWidth: 300 }}>
                         <div style={{ width: '100%', backgroundColor: '#d9d9d9', border: '1px solid #333', borderRadius: 12, display: 'flex', flexDirection: 'column', padding: 20 }}>
-                            <span style={{ fontSize: 18, marginBottom: 15, textAlign: 'center', fontWeight: 'bold' }}>Color Tag</span>
+                            <span style={{ fontSize: 18, marginBottom: 15, textAlign: 'center', fontWeight: 'bold' }}>{t('colorTagLabel')}</span>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center', marginBottom: 25 }}>
                                 {swatches.map(c => (
                                     <div key={c} onClick={() => setColor(c)} style={{ width: 35, height: 35, borderRadius: '50%', cursor: 'pointer', backgroundColor: c, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', border: color === c ? '2px solid #333' : '2px solid transparent', outline: color === c ? '2px solid #fff' : 'none', outlineOffset: -4 }}></div>
                                 ))}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, borderTop: '1px solid #bbb', paddingTop: 15 }}>
-                                <label style={{ fontSize: 14 }}>Or Custom Color</label>
+                                <label style={{ fontSize: 14 }}>{t('orCustomColorLabel')}</label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                     <input type="color" value={color} onChange={e => setColor(e.target.value)} style={{ width: 50, height: 40, cursor: 'pointer', border: '1px solid #999', borderRadius: 4, padding: 2 }} />
                                     <input type="text" value={color} readOnly style={{ width: 80, height: 30, textAlign: 'center', border: '1px solid #999', borderRadius: 4 }} />
@@ -120,13 +122,13 @@ export default function CreateTagPage() {
 
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 30, marginBottom: 30 }}>
                     <button onClick={handleDelete} style={{ width: 120, height: 35, border: selectedTags.size > 0 ? '1px solid #cc0000' : '1px solid #333', borderRadius: 4, fontSize: 16, backgroundColor: selectedTags.size > 0 ? '#ffcccc' : '#d9d9d9', color: selectedTags.size > 0 ? '#cc0000' : '#000' }}>
-                        {selectedTags.size > 0 ? `Delete (${selectedTags.size})` : 'Delete Selected'}
+                        {selectedTags.size > 0 ? t('deleteCountBtn', { count: selectedTags.size }) : t('deleteSelectedBtn')}
                     </button>
-                    <button onClick={handleCreate} style={{ width: 120, height: 35, backgroundColor: '#d9d9d9', border: '1px solid #333', borderRadius: 4, fontSize: 16 }}>Create</button>
+                    <button onClick={handleCreate} style={{ width: 120, height: 35, backgroundColor: '#d9d9d9', border: '1px solid #333', borderRadius: 4, fontSize: 16 }}>{t('createBtn')}</button>
                 </div>
 
                 <div style={{ borderTop: '1px solid #ccc', paddingTop: 20, width: '100%', maxWidth: 1100, margin: '0 auto' }}>
-                    <h3 style={{ fontSize: 16, marginBottom: 15, color: '#555' }}>Created Tags (Click/Tap to select)</h3>
+                    <h3 style={{ fontSize: 16, marginBottom: 15, color: '#555' }}>{t('createdTagsTitle')}</h3>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 15 }}>
                         {createdTags.map(tag => {
                             const sel = selectedTags.has(tag.id)

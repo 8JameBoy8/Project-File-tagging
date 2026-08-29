@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
-import { useUploadedFiles } from '@/context/UploadedFilesContext';
 import Topbar from '@/components/Topbar';
 import {
   Upload,
@@ -39,16 +38,17 @@ function getFileIcon(file) {
 function UploadFile() {
   const router = useRouter();
   const { t } = useLanguage();
-  const { setUploadedFiles } = useUploadedFiles();
   const fileInputRef = useRef(null);
 
   const goToPasswords = () => router.push('/user/filepassword');
 
+  const [availableTags, setAvailableTags] = useState([]);
   const [files, setFiles] = useState([]);
-  const [selectedTag, setSelectedTag] = useState('');
+  const [selectedTagId, setSelectedTagId] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [message, setMessage] = useState('');
   const [uploaded, setUploaded] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const [passwordEnabled, setPasswordEnabled] = useState(false);
   const [password, setPassword] = useState('');
@@ -57,6 +57,13 @@ function UploadFile() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   // เก็บว่าไฟล์ไหนบ้างที่จะถูกใช้รหัสผ่านนี้ด้วย (เลือกไฟล์ก่อนว่าจะใช้พาสเวิร์ดกับไฟล์ไหน)
   const [selectedForPassword, setSelectedForPassword] = useState({});
+
+  useEffect(() => {
+    fetch('/api/tags')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setAvailableTags(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
 
   const openFileNative = (item) => {
     if (!item?.rawFile) return;
@@ -138,7 +145,7 @@ function UploadFile() {
     setFiles([]);
     setMessage('');
     setUploaded(false);
-    setSelectedTag('');
+    setSelectedTagId('');
     setPasswordEnabled(false);
     setPassword('');
     setConfirmPassword('');
@@ -148,7 +155,7 @@ function UploadFile() {
 
   const isSelectedForPassword = (id) => selectedForPassword[id] !== false;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (files.length === 0) {
       setMessage(t('selectAtLeastOne'));
       return;
@@ -169,28 +176,40 @@ function UploadFile() {
       }
     }
 
-    const newUploadedFiles = files.map((item) => {
+    setUploading(true);
+    let successCount = 0;
+    // อัปโหลดทีละไฟล์ (กันยิงพร้อมกันเยอะเกินไป) — /api/files รับไฟล์เดียวต่อ request
+    for (const item of files) {
       const usesPassword = passwordEnabled && isSelectedForPassword(item.id);
-      return {
-        id: item.id,
-        name: item.rawFile.name,
-        tag: selectedTag || 'Unassigned',
-        password: usesPassword ? password : 'No Password',
-        type: item.rawFile.type,
-        rawFile: item.rawFile,
-        previewUrl: item.previewUrl,
-      };
-    });
+      const fd = new FormData();
+      fd.append('file', item.rawFile);
+      fd.append('tags', JSON.stringify(selectedTagId ? [selectedTagId] : []));
+      if (usesPassword) fd.append('password', password);
 
-    setUploadedFiles((prev) => [...newUploadedFiles, ...prev]);
+      try {
+        const res = await fetch('/api/files', { method: 'POST', body: fd });
+        if (res.ok) successCount += 1;
+      } catch (e) { }
+    }
+    setUploading(false);
 
-    setUploaded(true);
-    setMessage(t('uploadSuccess', { count: files.length, suffix: passwordEnabled ? t('sharedPasswordSuffix') : '' }));
+    if (successCount === files.length) {
+      setUploaded(true);
+      setMessage(t('uploadSuccess', { count: successCount, suffix: passwordEnabled ? t('sharedPasswordSuffix') : '' }));
+      files.forEach((item) => {
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      });
+      setFiles([]);
+      setSelectedForPassword({});
 
-    if (goToPasswords) {
-      setTimeout(() => {
-        goToPasswords();
-      }, 1200);
+      if (passwordEnabled && goToPasswords) {
+        setTimeout(() => {
+          goToPasswords();
+        }, 1200);
+      }
+    } else {
+      setUploaded(false);
+      setMessage(t('uploadPartialFailure', { success: successCount, total: files.length }));
     }
   };
 
@@ -198,21 +217,20 @@ function UploadFile() {
     <div className="legacy-user-page upload-page-wrapper">
       <Topbar title={t('uploadFile')} />
 
-      <main className="main-container-full">
+      <main className="upload-layout-grid">
         <section className="card main-drop-card">
           <div className="tag-select-wrapper">
             <select
-              value={selectedTag}
+              value={selectedTagId}
               onChange={(e) => {
-                setSelectedTag(e.target.value);
+                setSelectedTagId(e.target.value);
                 setMessage('');
               }}
             >
               <option value="">{t('selectTag')}</option>
-              <option value="Document">{t('document')}</option>
-              <option value="Work">{t('work')}</option>
-              <option value="Study">{t('study')}</option>
-              <option value="Personal">{t('personal')}</option>
+              {availableTags.map((tg) => (
+                <option key={tg.id} value={tg.id}>{tg.name}</option>
+              ))}
             </select>
             <ChevronDown size={16} className="select-icon" />
           </div>
@@ -397,6 +415,7 @@ function UploadFile() {
                 className="btn-browse-outline"
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
               >
                 + {t('addMoreFiles')}
               </button>
@@ -405,14 +424,16 @@ function UploadFile() {
                 className="btn-confirm-primary"
                 type="button"
                 onClick={handleConfirm}
+                disabled={uploading}
               >
-                <Upload size={16} /> {t('confirmUpload')}
+                <Upload size={16} /> {uploading ? t('uploadingInProgress') : t('confirmUpload')}
               </button>
 
               <button
                 className="btn-cancel-outline"
                 type="button"
                 onClick={clearFiles}
+                disabled={uploading}
               >
                 {t('cancelAll')}
               </button>
