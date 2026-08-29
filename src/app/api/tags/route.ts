@@ -1,10 +1,15 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { requireAuth } from '@/lib/auth/middleware'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof NextResponse) return authResult
+
     try {
         const tags = await prisma.tag.findMany({
+            where: { userId: authResult.userId },
             orderBy: { createdAt: 'desc' },
             include: {
                 _count: {
@@ -19,7 +24,10 @@ export async function GET() {
     }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+    const authResult = await requireAuth(request)
+    if (authResult instanceof NextResponse) return authResult
+
     try {
         const body = await request.json()
         const { name, color } = body
@@ -31,7 +39,8 @@ export async function POST(request: Request) {
         const newTag = await prisma.tag.create({
             data: {
                 name,
-                color: color || '#d9d9d9'
+                color: color || '#d9d9d9',
+                userId: authResult.userId,
             }
         })
 

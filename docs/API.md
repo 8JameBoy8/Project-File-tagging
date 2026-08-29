@@ -94,25 +94,25 @@ Errors: `400 INVALID_PASSWORD`, `400 VALIDATION_ERROR`
 
 ---
 
-## Tag Endpoints
+## Tag Endpoints (ทั้งหมดต้อง login + เป็นเจ้าของ tag เท่านั้น)
 
-> Tag เป็น **global** ไม่ผูกกับ user คนใดคนหนึ่ง — ทุกคนเห็น/ใช้ชุดเดียวกัน (ยังไม่ได้ทำ auth ในชุดนี้)
+> Tag เป็นของ user แต่ละคน (ไม่ใช่ global อีกต่อไป) — คนละคนตั้งชื่อ tag ซ้ำกันได้ (เช่นทั้งคู่มี tag ชื่อ "Work" คนละสี) แต่คนเดียวกันตั้งชื่อซ้ำตัวเองไม่ได้
 
 ### `GET /api/tags`
-`[{ "id", "name", "color", "createdAt", "_count": { "files": number } }]`
+เฉพาะ tag ของตัวเอง: `[{ "id", "name", "color", "createdAt", "userId", "_count": { "files": number } }]`
 
 ### `POST /api/tags`
-Request: `{ "name": "...", "color"?: "#rrggbb" }` (default `#d9d9d9`) → `201` tag object
-Error: `400` ถ้าชื่อซ้ำ
+Request: `{ "name": "...", "color"?: "#rrggbb" }` (default `#d9d9d9`) → `201` tag object (เป็นของ user ที่ login อยู่)
+Error: `400` ถ้าชื่อซ้ำกับ tag อื่นของ**ตัวเอง**
 
 ### `PUT /api/tags/[id]`
-Request: `{ "name"?, "color"? }`
+Request: `{ "name"?, "color"? }` — แก้ได้เฉพาะ tag ของตัวเอง (`404` ถ้าไม่ใช่เจ้าของ)
 
 ### `DELETE /api/tags/[id]`
-`{ "success": true }`
+`{ "success": true }` — ลบได้เฉพาะ tag ของตัวเอง (`404` ถ้าไม่ใช่เจ้าของ)
 
 ### `POST /api/tags/[id]/files`
-เพิ่ม tag นี้ให้ไฟล์หลายไฟล์พร้อมกัน **แบบเติม ไม่ลบ tag เดิมของไฟล์**: `{ "fileIds": ["id1", "id2"] }`
+เพิ่ม tag นี้ให้ไฟล์หลายไฟล์พร้อมกัน **แบบเติม ไม่ลบ tag เดิมของไฟล์**: `{ "fileIds": ["id1", "id2"] }` (เช็คด้วยว่าทั้ง tag และทุกไฟล์ใน `fileIds` เป็นของ user คนเดียวกับที่ login อยู่ ตัวไหนไม่ใช่ของตัวเองจะถูกข้ามเงียบๆ)
 
 ---
 
@@ -178,6 +178,6 @@ File object เดี่ยว (shape เหมือนด้านบน)
 ## หมายเหตุสำคัญสำหรับทีม mobile
 
 1. **File password ≠ Account password** — คนละระบบกัน ไฟล์แต่ละไฟล์ตั้งรหัสแยกได้ (เก็บ plaintext เพราะต้องดูค่าเดิมได้) ส่วนรหัสบัญชี hash ปกติ
-2. **Tag เป็น global** ไม่แยกตาม user — ถ้าจะทำหน้า "จัดการแท็ก" ต้องรู้ว่าทุกคนแก้ tag เดียวกันได้
+2. **Tag เป็นของแต่ละ user แล้ว** (ไม่ใช่ global) — คนละคนเห็น/แก้ tag ของตัวเองเท่านั้น ตั้งชื่อซ้ำกับคนอื่นได้
 3. Storage quota = 5GB/user คงที่ในโค้ด ยังไม่มี endpoint เปลี่ยนค่านี้
 4. Endpoint กลุ่ม `/api/admin/*` และ `/api/moderation/*` มีอยู่แล้วในโค้ดแต่**ยังไม่ได้เชื่อมกับหน้าเว็บ** (งานฝั่ง admin ยังไม่เริ่ม) — อย่าเพิ่งอ้างอิงกลุ่มนี้จนกว่าจะแจ้งอัปเดต

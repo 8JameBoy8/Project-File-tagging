@@ -9,10 +9,14 @@ datasource db {
 
 model Tag {
   id        String   @id @default(cuid())
-  name      String   @unique
+  name      String
   color     String   @default("#d9d9d9")
   createdAt DateTime @default(now())
   files     FileTag[]
+  userId    String   // เจ้าของแท็ก — แท็กเป็นของ user แต่ละคน ไม่ใช่ global อีกต่อไป
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name]) // ชื่อซ้ำกันได้ข้ามคน แต่คนเดียวกันซ้ำชื่อเดิมไม่ได้
 }
 
 model File {
@@ -50,6 +54,7 @@ model User {
   updateAt      DateTime  @updatedAt
   deletedAt     DateTime?
   files         File[]
+  tags          Tag[]
 }
 
 enum Role {

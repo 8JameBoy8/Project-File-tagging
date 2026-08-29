@@ -103,14 +103,19 @@ export async function POST(request: NextRequest) {
         const fileType = getFileType(originalName)
         const fileExt = getFileExtension(originalName)
 
-        // Handle tags (assuming JSON array of tag IDs)
+        // Handle tags (assuming JSON array of tag IDs) — เอาเฉพาะ tag ที่เป็นของ user คนนี้จริงๆ
+        // (กันส่ง tagId ของคนอื่นมาสวมสิทธิ์)
         let tagsData: Prisma.FileTagCreateWithoutFileInput[] = []
         if (tagsParam) {
             try {
                 const parsedTags = JSON.parse(tagsParam)
-                if (Array.isArray(parsedTags)) {
-                    tagsData = parsedTags.map(tId => ({
-                        tag: { connect: { id: tId } }
+                if (Array.isArray(parsedTags) && parsedTags.length > 0) {
+                    const ownedTags = await prisma.tag.findMany({
+                        where: { id: { in: parsedTags }, userId: authResult.userId },
+                        select: { id: true }
+                    })
+                    tagsData = ownedTags.map(t => ({
+                        tag: { connect: { id: t.id } }
                     }))
                 }
             } catch (e) {

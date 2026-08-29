@@ -23,14 +23,21 @@ export async function PUT(
             return NextResponse.json({ error: 'tagIds must be an array' }, { status: 400 })
         }
 
+        // เอาเฉพาะ tag ที่เป็นของ user คนนี้จริงๆ (กันส่ง tagId ของคนอื่นมาสวมสิทธิ์)
+        const ownedTags = await prisma.tag.findMany({
+            where: { id: { in: tagIds }, userId: authResult.userId },
+            select: { id: true }
+        })
+        const ownedTagIds = ownedTags.map(t => t.id)
+
         // First delete existing tags
         await prisma.fileTag.deleteMany({
             where: { fileId: id }
         })
 
         // Create new tags
-        if (tagIds.length > 0) {
-            const inserts = tagIds.map((tagId: string) =>
+        if (ownedTagIds.length > 0) {
+            const inserts = ownedTagIds.map((tagId: string) =>
                 prisma.fileTag.create({
                     data: {
                         fileId: id,
