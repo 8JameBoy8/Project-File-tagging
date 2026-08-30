@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import AppShell from "@/components/AppShell";
 import ProductCard from "@/components/ProductCard";
 import UserIcon from "@/components/UserIcon";
-import { useLanguage } from "@/components/LanguageContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 type User = {
   id: string;

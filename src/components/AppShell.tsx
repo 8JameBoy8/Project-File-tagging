@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 import UserIcon from "./UserIcon";
-import { useLanguage } from "./LanguageContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 type AppShellProps = {
   children: ReactNode;

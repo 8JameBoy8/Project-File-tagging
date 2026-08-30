@@ -7,7 +7,7 @@ import {
 
 import AppShell from "@/components/AppShell";
 import UserIcon from "@/components/UserIcon";
-import { useLanguage } from "@/components/LanguageContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function SettingPage() {
   const {

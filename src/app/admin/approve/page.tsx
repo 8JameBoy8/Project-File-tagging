@@ -7,7 +7,7 @@ import {
 
 import AppShell from "@/components/AppShell";
 import ProductCard from "@/components/ProductCard";
-import { useLanguage } from "@/components/LanguageContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 type ApproveFile = {
   id: number;
