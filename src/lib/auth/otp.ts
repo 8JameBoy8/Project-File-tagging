@@ -34,13 +34,18 @@ export async function createAndSendOtp(userId: string, email: string) {
         },
     })
 
-//ส่ง อีเมลจริง
-    await getResendClient().emails.send({
+//ส่ง อีเมลจริง — Resend SDK ไม่ throw ตอน API error (คืน { data: null, error } เฉยๆ) ต้องเช็ค
+//error เองแล้ว throw ต่อ ไม่งั้น endpoint ที่เรียกฟังก์ชันนี้จะคิดว่าส่งสำเร็จทั้งที่จริงไม่สำเร็จ
+    const result = await getResendClient().emails.send({
         from: 'onboarding@resend.dev',
         to: email,
         subject: 'รหัส OTP สำหรับรีเซ็ตรหัสผ่าน',
         html: `<p>รหัส OTP ของคุณคือ: <strong>${otp}</strong></p><p>หมดอายุใน 10 นาที</p>`,
     })
+
+    if (result.error) {
+        throw new Error(`Resend send failed: ${result.error.message}`)
+    }
 }
 
 //check ว่า otp ถูกมั้ย
