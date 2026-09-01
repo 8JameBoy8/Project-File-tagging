@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import fs from 'fs'
-import path from 'path'
 import { requireAuth } from '@/lib/auth/middleware'
-
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads')
 
 export async function GET(
     request: NextRequest,
@@ -19,10 +15,13 @@ export async function GET(
 
         if (!file || file.userId !== authResult.userId) return new NextResponse('Not found', { status: 404 })
 
-        const filepath = path.join(UPLOAD_DIR, file.path)
-        if (!fs.existsSync(filepath)) return new NextResponse('Not found', { status: 404 })
-
-        const buffer = fs.readFileSync(filepath)
+        // file.path เป็น URL เต็มของ Cloudinary (ย้ายจาก local disk มาตั้งแต่ต่อระบบสแกนไวรัส) —
+        // fetch ไฟล์จริงจาก Cloudinary ฝั่ง server แล้ว pipe กลับไปเอง แทนที่จะ redirect ตรงๆ
+        // เพื่อให้ auth + ความเป็นเจ้าของ + รหัสไฟล์ (ที่หน้า UI เช็คก่อนเรียก endpoint นี้) ยังคุม
+        // การเข้าถึงได้ทุกครั้ง — ถ้า redirect ตรงไป Cloudinary URL คนที่ได้ URL นั้นมาครั้งเดียวจะ
+        // เปิดดูซ้ำได้ตลอดไปโดยไม่ผ่านการเช็คสิทธิ์อีกเลย
+        const upstream = await fetch(file.path)
+        if (!upstream.ok || !upstream.body) return new NextResponse('Not found', { status: 404 })
 
         // basic mime type logic based on ext
         let mime = 'application/octet-stream'
@@ -35,7 +34,7 @@ export async function GET(
         else if (e === 'mp3') mime = 'audio/mpeg'
         else if (e === 'pdf') mime = 'application/pdf'
 
-        return new NextResponse(buffer, {
+        return new NextResponse(upstream.body, {
             headers: {
                 'Content-Type': mime,
                 'Cache-Control': 'private, max-age=31536000'

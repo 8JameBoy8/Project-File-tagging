@@ -84,14 +84,18 @@ model AdminActionLog {
 model ModerationItem {
    id            String    @id @default(cuid())
    fileUrl       String    // urlของไฟล์ที่อัปโหลดใน Cloudinary
+   cloudinaryId  String?   // public_id ของ Cloudinary (ไว้เรียก destroy ตอน reject กันไฟล์ขยะค้าง)
    fileName      String?   //ชื่อไฟล์ ไว้เเสดงในหน้า approve
    fileType      String?   // นามสกุลไฟล์
    fileSize      Int?      // ขนาดเป็น byte เอาไปคำนวนพท.การใช้งานของ user ด้วย
-   tags          String?  // tags ไว้ใส่ตอนอัปโหลด
+   tags          String?  // tags ไว้ใส่ตอนอัปโหลด (ชื่อ tag คั่นด้วย comma — เก็บไว้เพื่อ backward-compat)
+   tagIds        String?   // JSON array ของ tag id จริงที่ user เลือกตอนอัปโหลด ใช้ตอน promote เป็น File
+   password      String?   // รหัสปลดล็อกไฟล์ที่ user ตั้งตอนอัปโหลด (plaintext ตั้งใจ เหตุผลเดียวกับ File.password)
+   resultFileId  String?   // ผูกไปยัง File จริงที่ถูกสร้างขึ้นหลัง promote (ไว้ตรวจสอบย้อนหลัง)
    status        ModStatus @default(PENDING_SCAN) // สถานะปัจจุบันในคิว
    scanResult    String?   //ผลสเเกนดิบเก็บไว้เผื่อ debug
    uploadedBy    String    //userIdของ user ที่อัปโหลดไฟล์นี้
-   reviewedBy    String?   //userIdของ admin ที่ approve/reject รายการนี้
+   reviewedBy    String?   //userIdของ admin ที่ approve/reject รายการนี้ (null = ระบบ auto-approve เอง)
    createdAt     DateTime  @default(now())
    updatedAt     DateTime  @updatedAt
 }

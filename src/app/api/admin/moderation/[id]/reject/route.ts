@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, requireRole } from '@/lib/auth/middleware'
 import { prisma } from '@/lib/db'
+import cloudinary from '@/lib/cloudinary'
 
 export async function POST(
   req: NextRequest,
@@ -33,10 +34,21 @@ export async function POST(
     )
   }
 
+  // ไฟล์ถูกปฏิเสธแล้ว ไม่ต้องเก็บไว้ใน Cloudinary ต่อ — ลบทิ้งกันไฟล์ขยะค้าง (ไม่ critical
+  // ถ้าลบไม่สำเร็จก็แค่ log ไว้ ไม่ทำให้การ reject ทั้งหมด fail)
+  if (item.cloudinaryId) {
+    try {
+      await cloudinary.uploader.destroy(item.cloudinaryId, { resource_type: 'auto' })
+    } catch (error) {
+      console.error('Failed to delete rejected file from Cloudinary', error)
+    }
+  }
+
   const updated = await prisma.moderationItem.update({
     where: { id },
     data: {
       status: 'REJECTED',
+      reviewedBy: authResult.userId,
     },
   })
 

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 import Topbar from '@/components/Topbar';
 import {
@@ -36,11 +35,8 @@ function getFileIcon(file) {
 }
 
 function UploadFile() {
-  const router = useRouter();
   const { t } = useLanguage();
   const fileInputRef = useRef(null);
-
-  const goToPasswords = () => router.push('/user/filepassword');
 
   const [availableTags, setAvailableTags] = useState([]);
   const [files, setFiles] = useState([]);
@@ -195,18 +191,15 @@ function UploadFile() {
 
     if (successCount === files.length) {
       setUploaded(true);
-      setMessage(t('uploadSuccess', { count: successCount, suffix: passwordEnabled ? t('sharedPasswordSuffix') : '' }));
+      // หมายเหตุ: ไฟล์ยังไม่กลายเป็นไฟล์จริงทันที — ต้องผ่านการสแกนไวรัสในคิวก่อนเสมอ (ไม่กี่วินาที
+      // ปกติ) ถึงจะไปโผล่ที่ Home/Manage Tag/File Passwords เอง เลยไม่ redirect ไปหน้า File
+      // Passwords ทันทีเหมือนเดิม เพราะไฟล์จะยังไม่ปรากฏที่นั่นจนกว่าจะสแกนเสร็จ
+      setMessage(t('uploadQueuedMessage', { count: successCount }));
       files.forEach((item) => {
         if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
       });
       setFiles([]);
       setSelectedForPassword({});
-
-      if (passwordEnabled && goToPasswords) {
-        setTimeout(() => {
-          goToPasswords();
-        }, 1200);
-      }
     } else {
       setUploaded(false);
       setMessage(t('uploadPartialFailure', { success: successCount, total: files.length }));

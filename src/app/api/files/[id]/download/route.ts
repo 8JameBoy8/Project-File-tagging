@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import fs from 'fs'
-import path from 'path'
 import { requireAuth } from '@/lib/auth/middleware'
-
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads')
 
 export async function GET(
     request: NextRequest,
@@ -19,13 +15,14 @@ export async function GET(
 
         if (!file || file.userId !== authResult.userId) return new NextResponse('Not found', { status: 404 })
 
-        const filepath = path.join(UPLOAD_DIR, file.path)
-        if (!fs.existsSync(filepath)) return new NextResponse('Not found', { status: 404 })
+        // file.path เป็น URL เต็มของ Cloudinary — fetch ฝั่ง server แล้ว pipe กลับไป (เหตุผลเดียวกับ
+        // /serve: กันคนเอา URL ไปเปิดตรงๆ ข้ามการเช็คสิทธิ์)
+        const upstream = await fetch(file.path)
+        if (!upstream.ok || !upstream.body) return new NextResponse('Not found', { status: 404 })
 
-        const buffer = fs.readFileSync(filepath)
         const encodedName = encodeURIComponent(file.name)
 
-        return new NextResponse(buffer, {
+        return new NextResponse(upstream.body, {
             headers: {
                 'Content-Type': 'application/octet-stream',
                 'Content-Disposition': `attachment; filename*=UTF-8''${encodedName}`

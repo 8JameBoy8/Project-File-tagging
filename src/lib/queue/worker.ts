@@ -7,6 +7,7 @@ import { Worker } from 'bullmq'
 import { redisConnection } from './connection'
 import { scanFileForVirus } from './virus-scan'
 import { prisma } from '../db'
+import { promoteToFile } from '../moderation/promoteToFile'
 
 // สร้าง worker ที่ฟังงานจากคิวชื่อ "virus-scan"
 const worker = new Worker(
@@ -25,20 +26,24 @@ const worker = new Worker(
     // 2. เรียกฟังก์ชันสแกนไวรัสจริง
     const result = await scanFileForVirus(fileUrl)
 
-    // 3. อัปเดตสถานะตามผลสแกน
-    //    - ถ้าสะอาด (isClean) → ไปสถานะ PENDING_REVIEW (รอ admin ตรวจต่อ) — นี่คือ "auto-advance"
-    //    - ถ้าพบปัญหา → ไปสถานะ SCAN_FAILED (จบตรงนี้เลย ไม่ต้องรอ admin)
-    const newStatus = result.isClean ? 'PENDING_REVIEW' : 'SCAN_FAILED'
-
-    await prisma.moderationItem.update({
-      where: { id: moderationItemId },
-      data: {
-        status: newStatus,
-        scanResult: result.rawResult,
-      },
-    })
-
-    console.log(`สแกนเสร็จ: ${moderationItemId} → ${newStatus}`)
+    // 3. ตัดสินใจตามผลสแกน:
+    //    - สะอาด (isClean) → เข้าระบบทันที ไม่ต้องรอ admin (auto-approve) — สร้าง File จริงเลย
+    //    - ไม่สะอาด/เรียก API สแกนไม่สำเร็จ (ไม่ชัวร์ว่าปลอดภัย) → ไปรอ admin ตัดสินใจเองที่หน้า
+    //      Approve/Select แทนที่จะปัดตกอัตโนมัติแบบเดิม (SCAN_FAILED เดิมไม่เคยถึงมือ admin เลย)
+    if (result.isClean) {
+      await prisma.moderationItem.update({
+        where: { id: moderationItemId },
+        data: { scanResult: result.rawResult },
+      })
+      await promoteToFile(moderationItemId, null)
+      console.log(`สแกนเสร็จ: ${moderationItemId} → สะอาด, เข้าระบบอัตโนมัติแล้ว`)
+    } else {
+      await prisma.moderationItem.update({
+        where: { id: moderationItemId },
+        data: { status: 'PENDING_REVIEW', scanResult: result.rawResult },
+      })
+      console.log(`สแกนเสร็จ: ${moderationItemId} → ไม่ชัวร์ว่าปลอดภัย ส่งให้ admin ตรวจสอบ`)
+    }
   },
   { connection: redisConnection }
 )

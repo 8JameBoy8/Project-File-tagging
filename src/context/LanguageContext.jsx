@@ -76,6 +76,7 @@ const translations = {
     selectAtLeastOneForPassword: 'Please select at least one file to apply the password to.',
     uploadSuccess: 'Successfully uploaded {count} file(s){suffix}',
     sharedPasswordSuffix: ' (with password protection)',
+    uploadQueuedMessage: '{count} file(s) uploaded, scanning for safety now — they will appear automatically in a few seconds once done.',
 
     // =========================
     // File Password
@@ -328,6 +329,7 @@ const translations = {
     selectAtLeastOneForPassword: 'กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์ที่จะใช้รหัสผ่านนี้',
     uploadSuccess: 'อัปโหลดสำเร็จจำนวน {count} ไฟล์{suffix}',
     sharedPasswordSuffix: ' (มีการป้องกันด้วยรหัสผ่าน)',
+    uploadQueuedMessage: 'อัปโหลดแล้ว {count} ไฟล์ กำลังตรวจสอบความปลอดภัย — ไฟล์จะเพิ่มให้อัตโนมัติภายในไม่กี่วินาทีเมื่อตรวจสอบเสร็จ',
 
     // =========================
     // File Password

@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, requireRole } from '@/lib/auth/middleware'
 import { prisma } from '@/lib/db'
+import { promoteToFile } from '@/lib/moderation/promoteToFile'
 
 export async function POST(
   req: NextRequest,
@@ -34,14 +35,16 @@ export async function POST(
     )
   }
 
-  // อัปเดตสถานะเป็น APPROVED พร้อมบันทึกว่า admin คนไหนเป็นคน approve
-  const updated = await prisma.moderationItem.update({
-    where: { id },
-    data: {
-      status: 'APPROVED',
-      reviewedBy: authResult.userId,
-    },
-  })
-
-  return NextResponse.json({ item: updated })
+  // admin ยืนยันว่าไฟล์นี้ใช้ได้ — สร้าง File จริงในระบบเลย (promoteToFile จะอัปเดตสถานะเป็น
+  // APPROVED + ผูก resultFileId + reviewedBy ให้เองด้วย)
+  try {
+    const file = await promoteToFile(id, authResult.userId)
+    return NextResponse.json({ file })
+  } catch (error) {
+    console.error('Approve error', error)
+    return NextResponse.json(
+      { error: { code: 'PROMOTE_FAILED', message: 'อนุมัติไฟล์ไม่สำเร็จ' } },
+      { status: 500 }
+    )
+  }
 }

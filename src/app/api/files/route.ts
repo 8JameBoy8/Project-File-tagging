@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
-import { v4 as uuidv4 } from 'uuid'
-import fs from 'fs'
-import path from 'path'
-import { getFileType, getFileExtension } from '@/lib/fileUtils'
+import type { UploadApiResponse } from 'cloudinary'
+import cloudinary from '@/lib/cloudinary'
+import { enqueueScanJob } from '@/lib/queue/scan-queue'
+import { getFileExtension } from '@/lib/fileUtils'
 import { requireAuth } from '@/lib/auth/middleware'
-
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads')
 
 export async function GET(request: NextRequest) {
     const authResult = await requireAuth(request)
@@ -71,6 +69,21 @@ export async function GET(request: NextRequest) {
     }
 }
 
+// อัปโหลดไฟล์ขึ้น Cloudinary แล้วคืน URL — แยกเป็นฟังก์ชันเพราะ upload_stream ใช้ callback style
+async function uploadToCloudinary(buffer: Buffer): Promise<UploadApiResponse> {
+    return new Promise((resolve, reject) => {
+        cloudinary.uploader
+            .upload_stream({ folder: 'user-uploads', resource_type: 'auto' }, (error, result) => {
+                if (error || !result) reject(error ?? new Error('Cloudinary upload returned no result'))
+                else resolve(result)
+            })
+            .end(buffer)
+    })
+}
+
+// ไฟล์ที่ user อัปโหลดจะไม่กลายเป็น File จริงทันทีอีกต่อไป — ต้องผ่านคิวสแกนไวรัสก่อนเสมอ
+// (ดู src/lib/queue/worker.ts): สแกนผ่าน → กลายเป็น File จริงอัตโนมัติทันที, สแกนไม่ผ่าน/ไม่ชัวร์ →
+// ไปรอ admin ตรวจที่หน้า Approve/Select (src/app/admin/approve) ก่อนถึงจะกลายเป็น File ได้
 export async function POST(request: NextRequest) {
     const authResult = await requireAuth(request)
     if (authResult instanceof NextResponse) return authResult
@@ -86,26 +99,12 @@ export async function POST(request: NextRequest) {
         }
 
         const buffer = Buffer.from(await file.arrayBuffer())
-
-        // Ensure upload dir exists
-        if (!fs.existsSync(UPLOAD_DIR)) {
-            fs.mkdirSync(UPLOAD_DIR, { recursive: true })
-        }
-
         const originalName = file.name
-        const uuid = uuidv4()
-        const ext = path.extname(originalName)
-        const newFilename = `${uuid}${ext}`
-        const filepath = path.join(UPLOAD_DIR, newFilename)
 
-        fs.writeFileSync(filepath, buffer)
-
-        const fileType = getFileType(originalName)
-        const fileExt = getFileExtension(originalName)
-
-        // Handle tags (assuming JSON array of tag IDs) — เอาเฉพาะ tag ที่เป็นของ user คนนี้จริงๆ
-        // (กันส่ง tagId ของคนอื่นมาสวมสิทธิ์)
-        let tagsData: Prisma.FileTagCreateWithoutFileInput[] = []
+        // เอาเฉพาะ tag ที่เป็นของ user คนนี้จริงๆ (กันส่ง tagId ของคนอื่นมาสวมสิทธิ์) — เก็บแค่ id ไว้
+        // ใน ModerationItem.tagIds ก่อน จะ validate ซ้ำอีกทีตอน promote เป็น File จริง (เผื่อ tag ถูกลบ
+        // ไปแล้วระหว่างรอสแกน)
+        let ownedTagIds: string[] = []
         if (tagsParam) {
             try {
                 const parsedTags = JSON.parse(tagsParam)
@@ -114,42 +113,36 @@ export async function POST(request: NextRequest) {
                         where: { id: { in: parsedTags }, userId: authResult.userId },
                         select: { id: true }
                     })
-                    tagsData = ownedTags.map(t => ({
-                        tag: { connect: { id: t.id } }
-                    }))
+                    ownedTagIds = ownedTags.map(t => t.id)
                 }
             } catch (e) {
                 console.warn('Failed to parse tags param', e)
             }
         }
 
-        const newFile = await prisma.file.create({
+        const uploadResult = await uploadToCloudinary(buffer)
+
+        const item = await prisma.moderationItem.create({
             data: {
-                name: originalName,
-                type: fileType,
-                ext: fileExt,
-                path: newFilename,
-                size: file.size,
-                userId: authResult.userId,
+                fileUrl: uploadResult.secure_url,
+                cloudinaryId: uploadResult.public_id,
+                fileName: originalName,
+                fileType: uploadResult.format ?? getFileExtension(originalName).toLowerCase(),
+                fileSize: uploadResult.bytes ?? file.size,
+                tagIds: ownedTagIds.length > 0 ? JSON.stringify(ownedTagIds) : null,
                 password: passwordParam && passwordParam.length > 0 ? passwordParam : null,
-                tags: {
-                    create: tagsData
-                }
+                uploadedBy: authResult.userId,
+                status: 'PENDING_SCAN',
             },
-            include: {
-                tags: {
-                    include: { tag: true }
-                }
-            }
         })
 
-        const { password, ...rest } = newFile
+        await enqueueScanJob(item.id, item.fileUrl)
+
         return NextResponse.json({
-            ...rest,
-            tags: newFile.tags.map(t => t.tag.name),
-            hasPassword: !!password,
-            src: `/api/files/${newFile.id}/serve`,
-        }, { status: 201 })
+            status: 'PENDING_SCAN',
+            moderationItemId: item.id,
+            message: 'กำลังตรวจสอบไฟล์ ระบบจะเพิ่มไฟล์ให้อัตโนมัติเมื่อตรวจสอบเสร็จ',
+        }, { status: 202 })
     } catch (error) {
         console.error('Upload error', error)
         return NextResponse.json({ error: 'Upload failed' }, { status: 500 })

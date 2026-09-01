@@ -46,5 +46,19 @@ export async function GET(req: NextRequest) {
     orderBy: { [safeSortBy]: order },
   })
 
-  return NextResponse.json({ items })
+  // 5. แนบชื่อ/อีเมลของคนอัปโหลดไปกับแต่ละรายการเลย (query แยกทีเดียวรวบ ประหยัดกว่ายิงทีละคน)
+  //    เอาไว้ใช้แสดงในหน้า Approve/Select และ admin Home โดยไม่ต้องเรียกซ้ำทีละไฟล์
+  const uploaderIds = Array.from(new Set(items.map((item) => item.uploadedBy)))
+  const uploaders = await prisma.user.findMany({
+    where: { id: { in: uploaderIds } },
+    select: { id: true, displayName: true, email: true },
+  })
+  const uploaderMap = new Map(uploaders.map((u) => [u.id, u]))
+
+  const itemsWithUploader = items.map((item) => ({
+    ...item,
+    uploader: uploaderMap.get(item.uploadedBy) ?? null,
+  }))
+
+  return NextResponse.json({ items: itemsWithUploader })
 }
