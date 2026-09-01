@@ -85,6 +85,8 @@ model ModerationItem {
    id            String    @id @default(cuid())
    fileUrl       String    // urlของไฟล์ที่อัปโหลดใน Cloudinary
    cloudinaryId  String?   // public_id ของ Cloudinary (ไว้เรียก destroy ตอน reject กันไฟล์ขยะค้าง)
+   cloudinaryResourceType String? // "image"/"video"/"raw" — cloudinary.uploader.destroy ต้องรู้ค่านี้ให้ตรง
+                                  // เป๊ะถึงจะลบเจอ (resource_type: 'auto' ใช้ได้แค่ตอน upload ไม่ใช่ destroy)
    fileName      String?   //ชื่อไฟล์ ไว้เเสดงในหน้า approve
    fileType      String?   // นามสกุลไฟล์
    fileSize      Int?      // ขนาดเป็น byte เอาไปคำนวนพท.การใช้งานของ user ด้วย

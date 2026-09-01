@@ -126,6 +126,7 @@ export async function POST(request: NextRequest) {
             data: {
                 fileUrl: uploadResult.secure_url,
                 cloudinaryId: uploadResult.public_id,
+                cloudinaryResourceType: uploadResult.resource_type,
                 fileName: originalName,
                 fileType: uploadResult.format ?? getFileExtension(originalName).toLowerCase(),
                 fileSize: uploadResult.bytes ?? file.size,

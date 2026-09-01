@@ -36,9 +36,16 @@ export async function POST(
 
   // ไฟล์ถูกปฏิเสธแล้ว ไม่ต้องเก็บไว้ใน Cloudinary ต่อ — ลบทิ้งกันไฟล์ขยะค้าง (ไม่ critical
   // ถ้าลบไม่สำเร็จก็แค่ log ไว้ ไม่ทำให้การ reject ทั้งหมด fail)
+  // หมายเหตุ: destroy ต้องระบุ resource_type ให้ตรงกับตอน upload จริง ('auto' ใช้ได้แค่ตอน
+  // upload เท่านั้น ถ้าใส่ตอน destroy จะหาไฟล์ไม่เจอแล้วเงียบๆไม่ลบอะไรเลยโดยไม่ throw error)
   if (item.cloudinaryId) {
     try {
-      await cloudinary.uploader.destroy(item.cloudinaryId, { resource_type: 'auto' })
+      const result = await cloudinary.uploader.destroy(item.cloudinaryId, {
+        resource_type: item.cloudinaryResourceType || 'image',
+      })
+      if (result.result !== 'ok' && result.result !== 'not found') {
+        console.error('Cloudinary destroy did not confirm deletion', result)
+      }
     } catch (error) {
       console.error('Failed to delete rejected file from Cloudinary', error)
     }
