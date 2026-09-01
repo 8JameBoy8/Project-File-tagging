@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
 import UserIcon from "./UserIcon";
 import { useLanguage } from "@/context/LanguageContext";
@@ -14,129 +15,119 @@ export default function AppShell({
   children,
   title,
 }: AppShellProps) {
-  const { language, setLanguage } = useLanguage();
-
-  const isThai = language === "th";
+  const { lang, changeLanguage, t } = useLanguage();
+  const pathname = usePathname();
 
   const menu = [
-    {
-      href: "/home",
-      icon: "⌂",
-      th: "หน้าหลัก",
-      en: "Home",
-    },
-    {
-      href: "/approve",
-      icon: "☑",
-      th: "อนุมัติ / เลือก",
-      en: "Approve / Select",
-    },
-    {
-      href: "/setting",
-      icon: "⚙",
-      th: "ตั้งค่า",
-      en: "Setting",
-    },
+    { href: "/admin/home", icon: "⌂", label: t("home") },
+    { href: "/admin/approve", icon: "☑", label: t("approve") },
+    { href: "/admin/setting", icon: "⚙", label: t("setting") },
   ];
 
   return (
-    <div className="app-shell">
-      <header className="top-header">
+    <div className="admin-page">
+      <div className="app-shell">
+        <header
+          className="top-header"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "14px 28px",
+            background: "var(--surface-alt)",
+            borderBottom: "1px solid var(--line)",
+            flexShrink: 0,
+          }}
+        >
+          {/* ================= LEFT MENU ================= */}
+          <nav style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            {menu.map((item) => {
+              const active = pathname === item.href;
 
-        {/* ================= LEFT MENU ================= */}
-        <nav className="main-nav">
-          {menu.map((item) => {
-            const active =
-              (item.href === "/home" &&
-                title === "Home") ||
-              (item.href === "/approve" &&
-                (title === "Approve" ||
-                  title === "Approve / Select")) ||
-              (item.href === "/setting" &&
-                title === "Setting");
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "8px 16px",
+                    borderRadius: "var(--radius)",
+                    color: "var(--ink)",
+                    textDecoration: "none",
+                    background: active ? "var(--accent-soft)" : "transparent",
+                  }}
+                >
+                  <span style={{ fontSize: "16px" }}>{item.icon}</span>
+                  <span
+                    style={{
+                      fontSize: "12.5px",
+                      fontWeight: 500,
+                      color: active ? "var(--accent)" : "var(--muted)",
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`nav-item ${
-                  active ? "active" : ""
-                }`}
+          {/* ================= RIGHT SIDE ================= */}
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <h1
+              style={{
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontWeight: 600,
+                fontSize: "20px",
+                margin: 0,
+              }}
+            >
+              {title}
+            </h1>
+
+            <div style={{ display: "flex", gap: "4px" }}>
+              <button
+                type="button"
+                onClick={() => changeLanguage("en")}
+                style={{
+                  padding: "4px 10px",
+                  borderRadius: "var(--radius)",
+                  border: "1px solid var(--line)",
+                  background: lang === "en" ? "var(--accent)" : "var(--surface)",
+                  color: lang === "en" ? "#fff" : "var(--ink)",
+                  cursor: "pointer",
+                  fontSize: "12.5px",
+                }}
               >
-                <span className="nav-icon">
-                  {item.icon}
-                </span>
+                EN
+              </button>
+              <button
+                type="button"
+                onClick={() => changeLanguage("th")}
+                style={{
+                  padding: "4px 10px",
+                  borderRadius: "var(--radius)",
+                  border: "1px solid var(--line)",
+                  background: lang === "th" ? "var(--accent)" : "var(--surface)",
+                  color: lang === "th" ? "#fff" : "var(--ink)",
+                  cursor: "pointer",
+                  fontSize: "12.5px",
+                }}
+              >
+                TH
+              </button>
+            </div>
 
-                <span>
-                  {isThai
-                    ? item.th
-                    : item.en}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* ================= RIGHT SIDE ================= */}
-        <div className="header-right">
-
-          {/* PAGE TITLE */}
-          <h1 className="page-title">
-            {isThai
-              ? title === "Home"
-                ? "หน้าหลัก"
-                : title === "Approve" ||
-                    title === "Approve / Select"
-                  ? "อนุมัติ / เลือก"
-                  : "ตั้งค่า"
-              : title}
-          </h1>
-
-          {/* LANGUAGE */}
-          <div className="language-switcher">
-
-            <button
-              type="button"
-              className={`language-button ${
-                language === "en"
-                  ? "selected"
-                  : ""
-              }`}
-              onClick={() =>
-                setLanguage("en")
-              }
-            >
-              EN
-            </button>
-
-            <button
-              type="button"
-              className={`language-button ${
-                language === "th"
-                  ? "selected"
-                  : ""
-              }`}
-              onClick={() =>
-                setLanguage("th")
-              }
-            >
-              TH
-            </button>
-
-          </div>
-
-          {/* USER ICON */}
-          <div className="header-user">
             <UserIcon size={38} />
           </div>
+        </header>
 
-        </div>
-      </header>
-
-      {/* ================= PAGE CONTENT ================= */}
-      <main className="page-content">
-        {children}
-      </main>
+        {/* ================= PAGE CONTENT ================= */}
+        <main className="page-content">{children}</main>
+      </div>
     </div>
   );
 }

@@ -225,6 +225,34 @@ const translations = {
     savingBtn: 'Saving...',
     invalidResetLinkMsg: 'This link is invalid. Please start again from the forgot password page.',
     resetPasswordFailedMsg: 'Failed to reset password',
+
+    // =========================
+    // Admin
+    // =========================
+    approve: 'Approve / Select',
+    username: 'Username',
+    email: 'Email',
+    password: 'Password',
+    id: 'ID',
+    storage: 'Storage',
+    fileCount: 'File Count',
+    allTags: 'All Tags',
+    rename: 'Rename',
+    delete: 'Delete',
+    approveButton: 'Approve',
+    notApprove: 'Not Approve',
+    selectUser: 'Select User',
+    editProfile: 'Edit Profile',
+    changeImage: 'Change Image',
+    totalUsers: 'Total Users',
+    account: 'Account',
+    currentLanguage: 'Current Language',
+    confirmDeleteUserMsg: 'Do you want to delete this user?',
+    deleteUserSuccessMsg: 'User deleted successfully',
+    deleteUserFailedMsg: 'Failed to delete user',
+    noPendingItemsMsg: 'No files waiting for review',
+    approveSuccessMsg: 'Approved successfully',
+    rejectSuccessMsg: 'Rejected successfully',
   },
 
   th: {
@@ -449,6 +477,34 @@ const translations = {
     savingBtn: 'กำลังบันทึก...',
     invalidResetLinkMsg: 'ลิงก์นี้ไม่ถูกต้อง กรุณากลับไปเริ่มจากหน้าลืมรหัสผ่านใหม่',
     resetPasswordFailedMsg: 'เปลี่ยนรหัสผ่านไม่สำเร็จ',
+
+    // =========================
+    // Admin
+    // =========================
+    approve: 'อนุมัติ / เลือก',
+    username: 'ชื่อผู้ใช้',
+    email: 'อีเมล',
+    password: 'รหัสผ่าน',
+    id: 'รหัส',
+    storage: 'พื้นที่จัดเก็บ',
+    fileCount: 'จำนวนไฟล์',
+    allTags: 'แท็กทั้งหมด',
+    rename: 'เปลี่ยนชื่อ',
+    delete: 'ลบ',
+    approveButton: 'อนุมัติ',
+    notApprove: 'ไม่อนุมัติ',
+    selectUser: 'เลือกผู้ใช้',
+    editProfile: 'แก้ไขโปรไฟล์',
+    changeImage: 'เปลี่ยนรูป',
+    totalUsers: 'จำนวนผู้ใช้ทั้งหมด',
+    account: 'บัญชี',
+    currentLanguage: 'ภาษาปัจจุบัน',
+    confirmDeleteUserMsg: 'ต้องการลบผู้ใช้นี้หรือไม่?',
+    deleteUserSuccessMsg: 'ลบผู้ใช้สำเร็จ',
+    deleteUserFailedMsg: 'ลบผู้ใช้ไม่สำเร็จ',
+    noPendingItemsMsg: 'ไม่มีไฟล์ที่รอตรวจสอบ',
+    approveSuccessMsg: 'อนุมัติสำเร็จ',
+    rejectSuccessMsg: 'ปฏิเสธสำเร็จ',
   },
 };
 

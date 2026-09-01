@@ -1,256 +1,91 @@
 "use client";
 
-import {
-  ChangeEvent,
-  useState,
-} from "react";
-
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import UserIcon from "@/components/UserIcon";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function SettingPage() {
-  const {
-    language,
-    setLanguage,
-    t,
-  } = useLanguage();
+  const { lang, changeLanguage, t, userProfile } = useLanguage();
+  const router = useRouter();
 
-  const [username, setUsername] =
-    useState("User1");
+  const [totalUsers, setTotalUsers] = useState<number | null>(null);
 
-  const [email, setEmail] =
-    useState("user1@gmail.com");
+  useEffect(() => {
+    fetch("/api/admin/stats")
+      .then((res) => res.json())
+      .then((data) => setTotalUsers(data.totalUsers ?? 0))
+      .catch(() => setTotalUsers(null));
+  }, []);
 
-  const [profileImage, setProfileImage] =
-    useState<string | null>(null);
-
-
-  function handleImageChange(
-    event: ChangeEvent<HTMLInputElement>
-  ) {
-    const file =
-      event.target.files?.[0];
-
-    if (!file) return;
-
-    const reader =
-      new FileReader();
-
-    reader.onload = () => {
-      setProfileImage(
-        reader.result as string
-      );
-    };
-
-    reader.readAsDataURL(file);
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    router.push("/auth/login");
   }
-
-
-  function handleLogout() {
-    window.alert(
-      language === "th"
-        ? "ออกจากระบบแล้ว"
-        : "Logged out"
-    );
-  }
-
 
   return (
-    <AppShell title={t("setting")}
-    >
-
+    <AppShell title={t("setting")}>
       <div className="setting-page">
-
-        {/* ================= LEFT ================= */}
+        {/* ================= LEFT: ADMIN PROFILE (อ่านอย่างเดียว ไม่มี endpoint แก้โปรไฟล์ admin แยกต่างหาก
+             ใช้ /api/profile ตัวเดียวกับฝั่ง user ผ่าน context นี้อยู่แล้ว) ================= */}
         <section className="setting-card">
+          <h2>{t("editProfile")}</h2>
 
-          <h2>
-            {t("editProfile")}
-          </h2>
-
-
-          {/* PROFILE */}
           <div className="profile-section">
-
-            {profileImage ? (
-              <img
-                src={profileImage}
-                alt="Profile"
-                className="profile-image"
-              />
+            {userProfile?.avatar ? (
+              <img src={userProfile.avatar} alt="Profile" className="profile-image" />
             ) : (
               <UserIcon size={76} />
             )}
-
-            <label className="change-image-button">
-
-              ▣ {t("changeImage")}
-
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={
-                  handleImageChange
-                }
-              />
-
-            </label>
-
           </div>
 
+          <label className="input-label">{t("username")}</label>
+          <input className="setting-input" value={userProfile?.username || ""} readOnly />
 
-          {/* USERNAME */}
-          <label className="input-label">
-            {t("username")}
-          </label>
+          <label className="input-label">{t("email")}</label>
+          <input className="setting-input" value={userProfile?.email || ""} readOnly />
 
-          <div className="input-with-button">
-
-            <input
-              value={username}
-              onChange={(event) =>
-                setUsername(
-                  event.target.value
-                )
-              }
-            />
-
-            <button
-              type="button"
-              onClick={() =>
-                setUsername(
-                  window.prompt(
-                    t("username"),
-                    username
-                  ) || username
-                )
-              }
-            >
-              ✎
-            </button>
-
-          </div>
-
-
-          {/* EMAIL */}
-          <label className="input-label">
-            {t("email")}
-          </label>
-
-          <input
-            className="setting-input"
-            value={email}
-            onChange={(event) =>
-              setEmail(
-                event.target.value
-              )
-            }
-          />
-
-
-          {/* TOTAL USER */}
-          <label className="input-label">
-            {t("totalUser")}
-          </label>
-
-          <input
-            className="setting-input"
-            value="3"
-            readOnly
-          />
-
+          <label className="input-label">{t("totalUsers")}</label>
+          <input className="setting-input" value={totalUsers === null ? "—" : String(totalUsers)} readOnly />
         </section>
-
 
         {/* ================= RIGHT ================= */}
         <section className="setting-card">
-
-          {/* LANGUAGE */}
           <div className="setting-block">
-
-            <h2>
-              {t("language")}
-            </h2>
-
+            <h2>{t("language")}</h2>
 
             <div className="language-options">
-
               <button
                 type="button"
-                className={
-                  language === "en"
-                    ? "setting-language-button active"
-                    : "setting-language-button"
-                }
-                onClick={() =>
-                  setLanguage("en")
-                }
+                className={lang === "en" ? "setting-language-button active" : "setting-language-button"}
+                onClick={() => changeLanguage("en")}
               >
                 English
               </button>
-
-
               <button
                 type="button"
-                className={
-                  language === "th"
-                    ? "setting-language-button active"
-                    : "setting-language-button"
-                }
-                onClick={() =>
-                  setLanguage("th")
-                }
+                className={lang === "th" ? "setting-language-button active" : "setting-language-button"}
+                onClick={() => changeLanguage("th")}
               >
                 ภาษาไทย
               </button>
-
             </div>
-
           </div>
 
-
-          {/* ACCOUNT */}
           <div className="setting-block">
-
-            <h2>
-              {t("account")}
-            </h2>
-
-
-            <button
-              type="button"
-              className="logout-button"
-              onClick={
-                handleLogout
-              }
-            >
+            <h2>{t("account")}</h2>
+            <button type="button" className="logout-button" onClick={handleLogout}>
               → {t("logout")}
             </button>
-
           </div>
 
-
-          {/* CURRENT LANGUAGE */}
           <div className="current-language">
-
-            <strong>
-              {t("currentLanguage")}:
-            </strong>
-
-            <span>
-              {language === "th"
-                ? "ภาษาไทย"
-                : "English"}
-            </span>
-
+            <strong>{t("currentLanguage")}:</strong>
+            <span>{lang === "th" ? "ภาษาไทย" : "English"}</span>
           </div>
-
         </section>
-
       </div>
-
     </AppShell>
   );
 }

@@ -1,446 +1,194 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppShell from "@/components/AppShell";
 import ProductCard from "@/components/ProductCard";
 import UserIcon from "@/components/UserIcon";
 import { useLanguage } from "@/context/LanguageContext";
 
-type User = {
+type AdminUser = {
   id: string;
-  name: string;
   email: string;
-  password: string;
-  area: string;
-  storage: string;
+  displayName: string | null;
+  role: string;
+  createdAt: string;
+  storageUsedBytes: number;
   fileCount: number;
   tags: string[];
 };
 
-type FileItem = {
-  id: number;
-  user: string;
-  type: string;
-  size: string;
-  tags: number;
-  date: string;
-  timestamp: number;
+type ModerationFile = {
+  id: string;
+  fileName: string | null;
+  fileType: string | null;
+  fileSize: number | null;
+  status: string;
+  uploadedBy: string;
+  createdAt: string;
 };
 
-const users: User[] = [
-  {
-    id: "U001",
-    name: "User1",
-    email: "user1@gmail.com",
-    password: "********",
-    area: "Computer Science",
-    storage: "3.8 GB",
-    fileCount: 24,
-    tags: ["Project", "Report"],
-  },
-  {
-    id: "U002",
-    name: "User2",
-    email: "user2@gmail.com",
-    password: "********",
-    area: "Information Technology",
-    storage: "2.6 GB",
-    fileCount: 18,
-    tags: ["Image", "Work", "Design"],
-  },
-  {
-    id: "U003",
-    name: "User3",
-    email: "user3@gmail.com",
-    password: "********",
-    area: "Software Engineering",
-    storage: "1.9 GB",
-    fileCount: 12,
-    tags: ["PDF", "Document"],
-  },
-];
-
-const fileItems: FileItem[] = [
-  {
-    id: 1,
-    user: "User1",
-    type: "PDF",
-    size: "2 MB",
-    tags: 2,
-    date: "18/05/2025 10:30 AM",
-    timestamp: new Date("2025-05-18T10:30:00").getTime(),
-  },
-  {
-    id: 2,
-    user: "User1",
-    type: "SQL",
-    size: "500 KB",
-    tags: 2,
-    date: "18/05/2025 10:20 AM",
-    timestamp: new Date("2025-05-18T10:20:00").getTime(),
-  },
-  {
-    id: 3,
-    user: "User1",
-    type: "PowerPoint",
-    size: "3.9 MB",
-    tags: 1,
-    date: "18/05/2025 09:15 AM",
-    timestamp: new Date("2025-05-18T09:15:00").getTime(),
-  },
-  {
-    id: 4,
-    user: "User2",
-    type: "Image",
-    size: "1.5 MB",
-    tags: 3,
-    date: "18/05/2025 09:45 AM",
-    timestamp: new Date("2025-05-18T09:45:00").getTime(),
-  },
-  {
-    id: 5,
-    user: "User2",
-    type: "Word",
-    size: "1.1 MB",
-    tags: 2,
-    date: "18/05/2025 08:50 AM",
-    timestamp: new Date("2025-05-18T08:50:00").getTime(),
-  },
-  {
-    id: 6,
-    user: "User3",
-    type: "PDF",
-    size: "1.8 MB",
-    tags: 2,
-    date: "18/05/2025 08:10 AM",
-    timestamp: new Date("2025-05-18T08:10:00").getTime(),
-  },
-];
+function formatBytes(bytes: number) {
+  if (!bytes) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  let i = 0;
+  let value = bytes;
+  while (value >= 1024 && i < units.length - 1) {
+    value /= 1024;
+    i++;
+  }
+  return `${value.toFixed(1)} ${units[i]}`;
+}
 
 export default function HomePage() {
-  const { language } = useLanguage();
+  const { t, lang } = useLanguage();
+  const isThai = lang === "th";
 
-  const isThai = language === "th";
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [files, setFiles] = useState<ModerationFile[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [sortType, setSortType] = useState("newest");
+  const [loading, setLoading] = useState(true);
 
-  const [selectedUserId, setSelectedUserId] =
-    useState<string>("U001");
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/admin/user?limit=100").then((res) => res.json()),
+      fetch("/api/admin/moderation?status=all").then((res) => res.json()),
+    ])
+      .then(([userData, fileData]) => {
+        const loadedUsers: AdminUser[] = userData.users || [];
+        setUsers(loadedUsers);
+        setFiles(fileData.items || []);
+        if (loadedUsers.length) setSelectedUserId(loadedUsers[0].id);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
-  const [sortType, setSortType] =
-    useState<string>("newest");
-
-  const selectedUser =
-    users.find((user) => user.id === selectedUserId) ??
-    users[0];
+  const selectedUser = users.find((u) => u.id === selectedUserId) ?? null;
 
   const sortedFiles = useMemo(() => {
-    const result = [...fileItems];
-
+    const result = [...files];
     if (sortType === "newest") {
-      result.sort(
-        (a, b) => b.timestamp - a.timestamp
-      );
+      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (sortType === "oldest") {
+      result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    } else if (sortType === "alphabetical") {
+      result.sort((a, b) => (a.fileName || "").localeCompare(b.fileName || ""));
     }
-
-    if (sortType === "oldest") {
-      result.sort(
-        (a, b) => a.timestamp - b.timestamp
-      );
-    }
-
-    if (sortType === "tags") {
-      result.sort(
-        (a, b) => b.tags - a.tags
-      );
-    }
-
-    if (sortType === "alphabetical") {
-      result.sort((a, b) =>
-        a.user.localeCompare(b.user)
-      );
-    }
-
     return result;
-  }, [sortType]);
+  }, [sortType, files]);
 
-  const sortLabel = {
-    newest: isThai ? "ใหม่สุด" : "Newest",
-    oldest: isThai ? "เก่าสุด" : "Oldest",
-    tags: isThai
-      ? "จำนวนแท็ก"
-      : "Number of Tags",
-    alphabetical: isThai
-      ? "เรียงตามอักษร"
-      : "Alphabetical",
-  };
+  function userLabel(userId: string) {
+    const u = users.find((user) => user.id === userId);
+    return u ? u.displayName || u.email : userId;
+  }
 
-  const handleRename = () => {
-    const newName = window.prompt(
-      isThai
-        ? "กรุณาใส่ชื่อใหม่"
-        : "Enter a new name",
-      selectedUser.name
-    );
+  async function handleDelete() {
+    if (!selectedUser) return;
+    const confirmed = window.confirm(t("confirmDeleteUserMsg"));
+    if (!confirmed) return;
 
-    if (newName && newName.trim()) {
-      alert(
-        isThai
-          ? `เปลี่ยนชื่อเป็น ${newName.trim()} แล้ว`
-          : `Renamed to ${newName.trim()}`
-      );
+    const res = await fetch(`/api/admin/user/${selectedUser.id}`, { method: "DELETE" });
+    if (res.ok) {
+      alert(t("deleteUserSuccessMsg"));
+      const remaining = users.filter((u) => u.id !== selectedUser.id);
+      setUsers(remaining);
+      setSelectedUserId(remaining[0]?.id ?? null);
+    } else {
+      const data = await res.json().catch(() => null);
+      alert(data?.error?.message || t("deleteUserFailedMsg"));
     }
-  };
-
-  const handleDelete = () => {
-    const confirmed = window.confirm(
-      isThai
-        ? `ต้องการลบ ${selectedUser.name} หรือไม่?`
-        : `Do you want to delete ${selectedUser.name}?`
-    );
-
-    if (confirmed) {
-      alert(
-        isThai
-          ? "ดำเนินการลบเรียบร้อย"
-          : "Deleted successfully"
-      );
-    }
-  };
+  }
 
   return (
-    <AppShell title="Home">
-      <main className="home-page">
+    <AppShell title={t("home")}>
+      <div className="toolbar">
+        <label htmlFor="home-sort">{isThai ? "เรียงตาม" : "Sort by"}</label>
+        <select
+          id="home-sort"
+          className="sort-select"
+          value={sortType}
+          onChange={(event) => setSortType(event.target.value)}
+        >
+          <option value="newest">{isThai ? "ใหม่สุด" : "Newest"}</option>
+          <option value="oldest">{isThai ? "เก่าสุด" : "Oldest"}</option>
+          <option value="alphabetical">{isThai ? "เรียงตามชื่อไฟล์" : "By file name"}</option>
+        </select>
+      </div>
 
-        {/* =================================================
-            SORT
-        ================================================= */}
-
-        <div className="toolbar">
-          <label htmlFor="home-sort">
-            {isThai ? "เรียงตาม" : "Sort by"}
-          </label>
-
-          <select
-            id="home-sort"
-            className="sort-select"
-            value={sortType}
-            onChange={(event) =>
-              setSortType(event.target.value)
-            }
-          >
-            <option value="newest">
-              {sortLabel.newest}
-            </option>
-
-            <option value="oldest">
-              {sortLabel.oldest}
-            </option>
-
-            <option value="tags">
-              {sortLabel.tags}
-            </option>
-
-            <option value="alphabetical">
-              {sortLabel.alphabetical}
-            </option>
-          </select>
-        </div>
-
-
-        {/* =================================================
-            MAIN TWO COLUMNS
-        ================================================= */}
-
+      {loading ? (
+        <div className="empty-state">{isThai ? "กำลังโหลด..." : "Loading..."}</div>
+      ) : !selectedUser ? (
+        <div className="empty-state">{isThai ? "ยังไม่มีผู้ใช้ในระบบ" : "No users yet"}</div>
+      ) : (
         <section className="home-grid">
-
-          {/* =================================================
-              LEFT : USER DETAILS
-          ================================================= */}
-
+          {/* LEFT: USER DETAILS */}
           <div className="detail-card">
-
             <div className="preview-box">
               <UserIcon size={92} />
             </div>
 
             <div className="details">
-
               <div className="detail-row">
-                <strong>
-                  {isThai
-                    ? "ชื่อ User"
-                    : "Username"}
-                </strong>
-
-                <span>
-                  {selectedUser.name}
-                </span>
+                <strong>{t("username")}</strong>
+                <span>{selectedUser.displayName || selectedUser.email}</span>
               </div>
-
               <div className="detail-row">
-                <strong>
-                  {isThai
-                    ? "อีเมล"
-                    : "Email"}
-                </strong>
-
-                <span>
-                  {selectedUser.email}
-                </span>
+                <strong>{t("email")}</strong>
+                <span>{selectedUser.email}</span>
               </div>
-
               <div className="detail-row">
-                <strong>
-                  {isThai
-                    ? "รหัส"
-                    : "ID"}
-                </strong>
-
-                <span>
-                  {selectedUser.id}
-                </span>
+                <strong>{t("id")}</strong>
+                <span>{selectedUser.id}</span>
               </div>
-
               <div className="detail-row">
-                <strong>
-                  {isThai
-                    ? "พื้นที่"
-                    : "Area"}
-                </strong>
-
-                <span>
-                  {selectedUser.area}
-                </span>
+                <strong>{t("fileCount")}</strong>
+                <span>{selectedUser.fileCount}</span>
               </div>
-
               <div className="detail-row">
-                <strong>
-                  {isThai
-                    ? "จำนวนไฟล์"
-                    : "File Count"}
-                </strong>
-
-                <span>
-                  {selectedUser.fileCount}
-                </span>
+                <strong>{t("storage")}</strong>
+                <span>{formatBytes(selectedUser.storageUsedBytes)}</span>
               </div>
-
-              <div className="detail-row">
-                <strong>
-                  {isThai
-                    ? "พื้นที่จัดเก็บ"
-                    : "Storage"}
-                </strong>
-
-                <span>
-                  {selectedUser.storage}
-                </span>
-              </div>
-
               <div className="detail-row tags-row">
-                <strong>
-                  {isThai
-                    ? "แท็กทั้งหมด"
-                    : "All Tags"}
-                </strong>
-
+                <strong>{t("allTags")}</strong>
                 <div className="detail-tags">
-                  {selectedUser.tags.map(
-                    (tag: string) => (
-                      <span
-                        className="detail-tag"
-                        key={`${selectedUser.id}-${tag}`}
-                      >
-                        {tag}
-                      </span>
-                    )
-                  )}
+                  {selectedUser.tags.length === 0 && <span>—</span>}
+                  {selectedUser.tags.map((tag) => (
+                    <span className="detail-tag" key={tag}>
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               </div>
-
             </div>
 
-
-            {/* =================================================
-                ACTIONS
-            ================================================= */}
-
+            {/* หมายเหตุ: ปุ่ม Rename เอาออก — ยังไม่มี endpoint รองรับการแก้ displayName ของ user คนอื่นจากฝั่ง admin */}
             <div className="action-buttons">
-
-              <button
-                type="button"
-                className="rename-button"
-                onClick={handleRename}
-              >
-                ✎{" "}
-                {isThai
-                  ? "เปลี่ยนชื่อ"
-                  : "Rename"}
+              <button type="button" className="delete-button" onClick={handleDelete}>
+                ✕ {t("delete")}
               </button>
-
-              <button
-                type="button"
-                className="delete-button"
-                onClick={handleDelete}
-              >
-                ✕{" "}
-                {isThai
-                  ? "ลบ"
-                  : "Delete"}
-              </button>
-
             </div>
-
           </div>
 
-
-          {/* =================================================
-              RIGHT : USER FILE LIST
-          ================================================= */}
-
+          {/* RIGHT: ALL FILES (ทุก user) — คลิกไฟล์เพื่อดูรายละเอียด user ที่อัปโหลดไฟล์นั้น */}
           <div className="file-list-card">
-
             <div className="file-list">
-
-              {sortedFiles.map((file) => (
-
-                <ProductCard
-                  key={file.id}
-                  title={file.user}
-                  description={`${file.type} • ${file.size} • ${file.tags} ${
-                    isThai
-                      ? "แท็ก"
-                      : "tags"
-                  }`}
-                  count={file.tags}
-                  selected={
-                    file.user ===
-                    selectedUser.name
-                  }
-                  onClick={() => {
-                    const user =
-                      users.find(
-                        (item) =>
-                          item.name ===
-                          file.user
-                      );
-
-                    if (user) {
-                      setSelectedUserId(
-                        user.id
-                      );
-                    }
-                  }}
-                />
-
-              ))}
-
+              {sortedFiles.length === 0 ? (
+                <div className="empty-state">{isThai ? "ยังไม่มีไฟล์ในระบบ" : "No files yet"}</div>
+              ) : (
+                sortedFiles.map((file) => (
+                  <ProductCard
+                    key={file.id}
+                    title={userLabel(file.uploadedBy)}
+                    description={`${file.fileName ?? ""} • ${file.fileType ?? "?"} • ${formatBytes(file.fileSize ?? 0)} • ${file.status}`}
+                    selected={file.uploadedBy === selectedUser.id}
+                    onClick={() => setSelectedUserId(file.uploadedBy)}
+                  />
+                ))
+              )}
             </div>
-
           </div>
-
         </section>
-
-      </main>
+      )}
     </AppShell>
   );
 }

@@ -1,0 +1,380 @@
+/* Styles สำหรับโซน /admin ทั้งหมด — scope ไว้ใต้ .admin-page เดียวกันแบบที่ user-theme.css
+   ทำกับ .legacy-user-page (กันปัญหา CSS รั่วไปกระทบหน้าอื่นทั้งแอป) อ้างอิงตัวแปรสี/ฟอนต์
+   ชุดเดียวกับ globals.css ให้หน้าตาสอดคล้องกับส่วนอื่นของแอป */
+
+.admin-page {
+  font-family: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--ink);
+  background: var(--canvas);
+  min-height: 100vh;
+}
+
+.admin-page .page-content {
+  padding: 24px 28px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.admin-page h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+.admin-page button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.admin-page select,
+.admin-page input {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+/* ===== User icon ===== */
+.admin-page .user-icon {
+  border-radius: 50%;
+  background: var(--accent-soft);
+  border: 1.5px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.admin-page .user-head {
+  width: 34%;
+  height: 34%;
+  border-radius: 50%;
+  background: var(--accent);
+  position: absolute;
+  top: 20%;
+}
+.admin-page .user-body {
+  width: 62%;
+  height: 40%;
+  border-radius: 50% 50% 0 0;
+  background: var(--accent);
+  position: absolute;
+  bottom: 10%;
+}
+
+/* ===== Toolbar (Home sort) ===== */
+.admin-page .toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.admin-page .toolbar label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ===== Two-column grid (Home / Approve) ===== */
+.admin-page .home-grid,
+.admin-page .approve-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .admin-page .home-grid,
+  .admin-page .approve-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Detail card (left column) ===== */
+.admin-page .detail-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.admin-page .preview-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0;
+}
+.admin-page .details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.admin-page .detail-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13.5px;
+}
+.admin-page .detail-row strong {
+  color: var(--muted);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.admin-page .detail-row.tags-row {
+  align-items: flex-start;
+}
+.admin-page .detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.admin-page .detail-tag {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+}
+.admin-page .action-buttons,
+.admin-page .approve-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.admin-page .delete-button,
+.admin-page .not-approve-button {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-weight: 500;
+  font-size: 13.5px;
+}
+.admin-page .approve-button {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--ok);
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-weight: 500;
+  font-size: 13.5px;
+}
+
+/* ===== File list card (right column) ===== */
+.admin-page .file-list-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  max-height: 640px;
+  overflow-y: auto;
+}
+.admin-page .file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.admin-page .product-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface-alt);
+  text-align: left;
+}
+.admin-page .product-card.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.admin-page .file-list-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  position: relative;
+  flex-shrink: 0;
+}
+.admin-page .product-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.admin-page .product-card-content strong {
+  font-size: 13.5px;
+}
+.admin-page .product-card-content span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.admin-page .product-card-count {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11.5px;
+  padding: 2px 8px;
+  flex-shrink: 0;
+}
+.admin-page .product-card time {
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+/* ===== Approve page ===== */
+.admin-page .approve-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.admin-page .pdf-preview {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.admin-page .pdf-page {
+  width: 140px;
+  height: 180px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-alt);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.admin-page .pdf-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 70%;
+}
+.admin-page .pdf-lines span {
+  height: 3px;
+  background: var(--line);
+  border-radius: 2px;
+}
+
+/* ===== Setting page ===== */
+.admin-page .setting-page {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 860px) {
+  .admin-page .setting-page {
+    grid-template-columns: 1fr;
+  }
+}
+.admin-page .setting-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.admin-page .profile-section {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 6px;
+}
+.admin-page .profile-image {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.admin-page .change-image-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-alt);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.admin-page .input-label {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.admin-page .input-with-button {
+  display: flex;
+  gap: 8px;
+}
+.admin-page .input-with-button input {
+  flex: 1;
+}
+.admin-page .setting-input {
+  width: 100%;
+}
+.admin-page .setting-block {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.admin-page .setting-block:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+.admin-page .language-options {
+  display: flex;
+  gap: 8px;
+}
+.admin-page .setting-language-button {
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.admin-page .setting-language-button.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.admin-page .logout-button {
+  padding: 9px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-weight: 500;
+  align-self: flex-start;
+}
+.admin-page .current-language {
+  display: flex;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ===== Empty state ===== */
+.admin-page .empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-size: 13.5px;
+}

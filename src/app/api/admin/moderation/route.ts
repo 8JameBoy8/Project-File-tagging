@@ -19,7 +19,11 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
 
   // สถานะที่จะกรอง — ถ้าไม่ระบุ default เป็น PENDING_REVIEW (คิวที่ admin ต้องมาตรวจบ่อยสุด)
+  // ส่ง status=all เพื่อดูทุกสถานะ (เช่นหน้า admin Home ที่อยากเห็นไฟล์ทั้งหมดของ user คนหนึ่ง ไม่ใช่แค่ที่รอตรวจ)
   const status = searchParams.get('status') || 'PENDING_REVIEW'
+
+  // กรองเฉพาะไฟล์ของ user คนใดคนหนึ่ง (ใช้ตอนกดเลือก user ในหน้า admin Home)
+  const uploadedBy = searchParams.get('uploadedBy')
 
   // field ที่จะ sort — รองรับ 'createdAt' (วันที่อัปโหลด) หรือ 'fileSize' (ขนาดไฟล์)
   // ถ้าไม่ระบุ default เรียงตามวันที่อัปโหลด
@@ -35,7 +39,10 @@ export async function GET(req: NextRequest) {
 
   // 4. ดึงรายการตามสถานะและลำดับที่ขอ
   const items = await prisma.moderationItem.findMany({
-    where: { status: status as ModStatus },
+    where: {
+      ...(status !== 'all' ? { status: status as ModStatus } : {}),
+      ...(uploadedBy ? { uploadedBy } : {}),
+    },
     orderBy: { [safeSortBy]: order },
   })
 

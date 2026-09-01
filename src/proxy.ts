@@ -6,9 +6,10 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyToken } from '@/lib/auth/jwt'
 
-// โซนที่ต้อง login ก่อนถึงจะเข้าได้ (ยังไม่มี /admin จริงในโปรเจกต์นี้ แต่เผื่อไว้ตามแผนแยกโฟลเดอร์
-// ตามหน้าที่/role พอ merge เข้ามาจริงจะถูกป้องกันไปด้วยในตัวโดยไม่ต้องแก้ไฟล์นี้เพิ่ม)
+// โซนที่ต้อง login ก่อนถึงจะเข้าได้
 const PROTECTED_PREFIXES = ['/user', '/admin']
+// โซนที่ต้อง login และต้องเป็น role ADMIN เท่านั้น (user ทั่วไป login อยู่ก็เข้าไม่ได้)
+const ADMIN_PREFIXES = ['/admin']
 // โซนหน้า auth เอง — ถ้า login อยู่แล้วไม่ควรเห็นหน้าพวกนี้อีก
 const AUTH_PREFIXES = ['/auth']
 
@@ -16,25 +17,28 @@ function matchesPrefix(pathname: string, prefixes: string[]) {
     return prefixes.some(p => pathname === p || pathname.startsWith(`${p}/`))
 }
 
-async function isAuthenticated(req: NextRequest): Promise<boolean> {
+// คืนค่า role ('ADMIN'/'USER') ถ้า login อยู่ (token ถูกต้อง), null ถ้ายังไม่ login
+async function getAuthedRole(req: NextRequest): Promise<string | null> {
     const token = req.cookies.get('token')?.value
-    if (!token) return false
+    if (!token) return null
     try {
-        await verifyToken(token)
-        return true
+        const payload = await verifyToken(token)
+        return payload.role
     } catch {
         // token ไม่มี/หมดอายุ/ปลอม ถือว่ายังไม่ login
-        return false
+        return null
     }
 }
 
 export async function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl
-    const authed = await isAuthenticated(req)
+    const role = await getAuthedRole(req)
+    const authed = role !== null
 
     // เข้าหน้าแรกเฉยๆ ("/") ให้พาไปที่ที่ควรอยู่ตามสถานะ login แทนที่จะ 404
     if (pathname === '/') {
-        return NextResponse.redirect(new URL(authed ? '/user/home' : '/auth/login', req.url))
+        const dest = !authed ? '/auth/login' : role === 'ADMIN' ? '/admin/home' : '/user/home'
+        return NextResponse.redirect(new URL(dest, req.url))
     }
 
     if (matchesPrefix(pathname, PROTECTED_PREFIXES) && !authed) {
@@ -43,8 +47,13 @@ export async function proxy(req: NextRequest) {
         return NextResponse.redirect(loginUrl)
     }
 
-    if (matchesPrefix(pathname, AUTH_PREFIXES) && authed) {
+    // login อยู่แต่ไม่ใช่ admin แล้วพยายามเข้าโซน admin → เด้งกลับหน้าแรกของ user แทน (กัน user ทั่วไปมาดูหน้า admin เฉยๆ)
+    if (matchesPrefix(pathname, ADMIN_PREFIXES) && authed && role !== 'ADMIN') {
         return NextResponse.redirect(new URL('/user/home', req.url))
+    }
+
+    if (matchesPrefix(pathname, AUTH_PREFIXES) && authed) {
+        return NextResponse.redirect(new URL(role === 'ADMIN' ? '/admin/home' : '/user/home', req.url))
     }
 
     return NextResponse.next()
