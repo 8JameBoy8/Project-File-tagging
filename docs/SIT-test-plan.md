@@ -27,7 +27,7 @@
 | รายการ | ค่าที่ใช้ | เหตุผล |
 |---|---|---|
 | Database | SQLite ไฟล์แยกต่างหาก (`test-integration.db`) สร้างใหม่ทุกครั้งที่รัน | แยกจากข้อมูลจริง/dev ไม่ปนกัน แต่ยังใช้ schema/migration ชุดเดียวกับของจริงทุกตัว |
-| Cloudinary / Cloudmersive / Redis | **ของจริง** (ตัวเดียวกับที่ใช้ dev/production) | ให้ผลตรงกับพฤติกรรมจริง 100% — เคยเจอบั๊กจริงที่ unit test/mock ตรวจไม่เจอ (ดูหัวข้อ 5) จึงตัดสินใจไม่ใช้ mock สำหรับ SIT |
+| Cloudinary / Cloudmersive / Redis | **ของจริง** (ตัวเดียวกับที่ใช้ dev/production) | ให้ผลตรงกับพฤติกรรมจริง 100% — เคยเจอบั๊กจริงที่ unit test/mock ตรวจไม่เจอมาแล้ว (ดู SIT-04.4) จึงตัดสินใจไม่ใช้ mock สำหรับ SIT |
 | Web server | `next dev` รันจริงบน port แยก (3100) ผ่าน Vitest `globalSetup` | ทดสอบผ่าน HTTP request จริงเหมือนผู้ใช้งานจริง ไม่ใช่เรียกฟังก์ชันตรง ๆ ในโค้ด |
 | Worker | `npm run worker` รันจริงคู่กัน | จำเป็นสำหรับทดสอบ pipeline สแกนไฟล์ทั้งสาย (SIT-03) |
 | เครื่องมือ | Vitest (`vitest.integration.config.mts`) | แยก config จาก unit test โดยสิ้นเชิง ไม่กระทบ `npm test`/CI เดิม |
@@ -39,8 +39,10 @@
 
 ```
 Test Files  6 passed (6)
-     Tests  22 passed (22)
+     Tests  23 passed (23)
 ```
+
+(เพิ่มจาก 22 เป็น 23 หลังแก้ SIT-06 จาก Resend เป็น Gmail SMTP — เพิ่ม test case ตรวจว่าอีเมลที่ไม่มีในระบบก็ยังตอบ 200 เหมือนกัน ดูหัวข้อ 4)
 
 ## 4. Test Case
 
@@ -66,15 +68,15 @@ Test Files  6 passed (6)
 | SIT-05.2 | USER ธรรมดาเข้าโซน admin | Middleware (proxy.ts) | login เป็น USER | GET `/admin/home` | redirect ไป `/user/home` | `proxy-role-gate.test.ts` | ✅ Pass |
 | SIT-05.3 | ADMIN เข้าโซน admin | Middleware (proxy.ts) | login เป็น ADMIN | GET `/admin/home` | 200 | `proxy-role-gate.test.ts` | ✅ Pass |
 | SIT-05.4 | ADMIN เข้าโซน user ได้ปกติ | Middleware (proxy.ts) | login เป็น USER/ADMIN | GET `/user/home` | 200 ทั้งคู่ | `proxy-role-gate.test.ts` | ✅ Pass |
-| SIT-06.1 | ขอ OTP ให้ user ที่มีจริง | API + Resend | มี user นี้ | POST `/api/auth/forget-password` | **ควรได้ 200** | `forgot-password-otp.test.ts` | 🔴 **Blocked** — ได้ 500 จริง เพราะ Resend sandbox ยังส่งอีเมลไปหา user จริงไม่ได้ (ดูหัวข้อ 5) |
-| SIT-06.2 | ขอ OTP ให้อีเมลที่ไม่มีในระบบ | API | ไม่มี | POST `/api/auth/forget-password` อีเมลไม่มีจริง | 200 (ข้อความกลาง ๆ กันเดา email) | `forgot-password-otp.test.ts` | ✅ Pass |
+| SIT-06.1 | ขอ OTP ให้ user ที่มีจริง | API + Gmail SMTP | มี user นี้ | POST `/api/auth/forget-password` | 200, ส่งอีเมลจริงสำเร็จ | `forgot-password-otp.test.ts` | ✅ Pass |
+| SIT-06.2 | OTP ปลอมต้องถูกปฏิเสธ | API | ขอ OTP แล้ว | POST `/api/auth/reset-password` ด้วย OTP ผิด | 400 INVALID_OTP | `forgot-password-otp.test.ts` | ✅ Pass |
+| SIT-06.3 | ขอ OTP ให้อีเมลที่ไม่มีในระบบ | API | ไม่มี | POST `/api/auth/forget-password` อีเมลไม่มีจริง | 200 (ข้อความกลาง ๆ กันเดา email) | `forgot-password-otp.test.ts` | ✅ Pass |
 
-**หมายเหตุ SIT-06.1:** เทสอัตโนมัติ "ผ่าน" ในความหมายที่ว่ามันยืนยันสถานะปัจจุบันถูกต้อง (ได้ 500 ตามที่คาดจริง) — แต่ **ฟีเจอร์ Forgot Password ยังใช้กับผู้ใช้จริงไม่ได้** จนกว่าจะแก้ตามหัวข้อ 5 เมื่อแก้เสร็จให้เปลี่ยน assertion ในเทสจาก `toBe(500)` เป็น `toBe(200)`
+**หมายเหตุ SIT-06:** เดิมใช้ Resend ซึ่งต้องยืนยันโดเมนของตัวเองก่อนถึงจะส่งอีเมลไปหา user จริงได้ (ไม่ใช่แค่อีเมลเจ้าของบัญชี Resend เอง) เปลี่ยนไปใช้ Gmail SMTP แทนแล้ว (ฟรี ไม่ต้องมีโดเมน) ทดสอบยืนยันด้วยมือแล้วว่าอีเมลจริงส่งถึงจริง (ครบวงจร: ขอ OTP → ได้รับอีเมลจริง → ตั้งรหัสผ่านใหม่ → login ด้วยรหัสใหม่สำเร็จ) ระหว่างทางเจอว่า Gmail SMTP port 465 (implicit TLS) ต่อไม่ผ่านบนเครือข่ายนี้ แต่ port 587 (STARTTLS) ต่อผ่านปกติ — ดู comment ใน `src/lib/auth/otp.ts`
 
-## 5. รายการที่ยังค้างอยู่ (ไม่ผ่าน SIT เต็มรูปแบบ)
+## 5. รายการที่ยังค้างอยู่
 
-1. **Resend — ต้องยืนยันโดเมนของตัวเอง** บัญชียังอยู่โหมด sandbox (ผู้ส่ง `onboarding@resend.dev`) ส่งอีเมลได้แค่ไปยังอีเมลของเจ้าของบัญชีเอง ต้องไป Resend dashboard → Domains → เพิ่มโดเมนจริง + ตั้งค่า DNS ตามที่ Resend กำหนด ผลกระทบ: หน้า Forgot Password และ Change Password (OTP) ยังใช้กับผู้ใช้จริงไม่ได้ (SIT-06.1)
-2. **Railway — ยังไม่ได้ deploy worker** ทดสอบผ่าน SIT ในเครื่อง (ที่มี worker รันจริง) ได้ผลถูกต้องหมด แต่บน production (Vercel) ยังไม่มี worker รันอยู่ที่ไหน ทำให้ไฟล์ที่ user อัปโหลดจริงบนเว็บที่ deploy แล้วจะค้างสถานะ "กำลังตรวจสอบ" ตลอดไป (ไม่ใช่ปัญหาของโค้ด เป็นเรื่อง deployment ที่ยังไม่เสร็จ)
+ไม่มี — Railway (worker) และ Resend/Gmail (OTP email) แก้ครบทั้งคู่แล้ว ยืนยันด้วยการทดสอบจริงบน production ทั้งสองเรื่อง
 
 ## 6. ข้อจำกัดของชุดทดสอบนี้
 
