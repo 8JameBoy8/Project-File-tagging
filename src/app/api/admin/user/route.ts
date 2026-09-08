@@ -55,38 +55,45 @@ export async function GET(req: NextRequest) {
   // 2. ดึงข้อมูลไฟล์ของแต่ละ user ที่อยู่ในหน้านี้ทีเดียว (groupBy = สรุปยอดต่อคน ประหยัดกว่า query ทีละคน)
   const userIds = users.map((u) => u.id)
 
-  const fileStats = await prisma.moderationItem.groupBy({
-    by: ['uploadedBy'],
-    where: { uploadedBy: { in: userIds } },
-    _sum: { fileSize: true },     // รวมขนาดไฟล์ทั้งหมดของ user คนนั้น
+  // เดิม query 2 ก้อนนี้อ่านจาก ModerationItem (คิวสแกนไวรัส) ทั้งคู่ ซึ่งมี 2 ปัญหาที่เจอจริงจาก
+  // การทดสอบ: (1) fileCount/storageUsedBytes นับ "ทุกครั้งที่เคยอัปโหลด" รวมรายการที่สแกนไม่ผ่าน/
+  // ยังไม่ผ่านคิวด้วย ตัวเลขเลยไม่ตรงกับจำนวนไฟล์จริงที่มีอยู่ (เช่น อัปโหลด 8 ครั้งแต่มีไฟล์จริงแค่ 7
+  // เพราะ 1 อันสแกนไม่ผ่าน) (2) field `tags` ของ ModerationItem เป็น field เก่าที่เก็บไว้เพื่อ
+  // backward-compat เท่านั้น (คอมเมนต์ในเอง schema บอกตรงๆ) โค้ดอัปโหลดปัจจุบันไม่เคยเขียนค่าใส่เลย
+  // (ใช้ `tagIds` แทนตั้งนานแล้ว) เลยเป็น null เสมอ ผลคือแสดงเป็น tag ว่างๆ ทุกครั้ง
+  // แก้โดยอ่านจากตาราง File จริงแทนทั้งหมด (เหมือนที่แก้ไปแล้วใน /api/admin/user/[id]/files)
+  const fileStats = await prisma.file.groupBy({
+    by: ['userId'],
+    where: { userId: { in: userIds } },
+    _sum: { size: true },          // รวมขนาดไฟล์ทั้งหมดของ user คนนั้น
     _count: { id: true },          // นับจำนวนไฟล์ทั้งหมด
-    _min: { createdAt: true },     // เวลาไฟล์แรกที่อัปโหลด (ใช้ตอน sort firstUpload)
-    _max: { createdAt: true },     // เวลาไฟล์ล่าสุดที่อัปโหลด (ใช้ตอน sort lastUpload)
+    _min: { uploadedAt: true },    // เวลาไฟล์แรกที่อัปโหลด (ใช้ตอน sort firstUpload)
+    _max: { uploadedAt: true },    // เวลาไฟล์ล่าสุดที่อัปโหลด (ใช้ตอน sort lastUpload)
   })
 
-  // 3. ดึงแท็กทั้งหมดที่แต่ละ user เคยใช้ (query แยก เพราะ groupBy รวม array ตรงๆ ไม่ได้)
-  const allItems = await prisma.moderationItem.findMany({
-    where: { uploadedBy: { in: userIds } },
-    select: { uploadedBy: true, tags: true },
+  // 3. ดึงแท็กทั้งหมดที่แต่ละ user เคยใช้จริง (query แยก เพราะ groupBy รวม relation ตรงๆ ไม่ได้)
+  const allFiles = await prisma.file.findMany({
+    where: { userId: { in: userIds } },
+    select: { userId: true, tags: { select: { tag: { select: { name: true } } } } },
   })
 
   // 4. รวมข้อมูลทั้งหมดเข้ากับ user แต่ละคน (merge ด้วย JS เพราะ Prisma รวม query ข้าม table แบบนี้ให้ตรงๆ ไม่ได้)
   const usersWithStats = users.map((user) => {
-    const stat = fileStats.find((s) => s.uploadedBy === user.id)
+    const stat = fileStats.find((s) => s.userId === user.id)
 
     // รวมแท็กทั้งหมดของ user คนนี้ แล้วตัดตัวซ้ำออกด้วย Set
-    const userTags = allItems
-      .filter((item) => item.uploadedBy === user.id)
-      .flatMap((item) => item.tags)
+    const userTags = allFiles
+      .filter((file) => file.userId === user.id)
+      .flatMap((file) => file.tags.map((t) => t.tag.name))
     const uniqueTags = Array.from(new Set(userTags))
 
     return {
       ...user,
-      storageUsedBytes: stat?._sum.fileSize ?? 0,
+      storageUsedBytes: stat?._sum.size ?? 0,
       fileCount: stat?._count.id ?? 0,
       tags: uniqueTags,
-      firstUploadAt: stat?._min.createdAt ?? null,
-      lastUploadAt: stat?._max.createdAt ?? null,
+      firstUploadAt: stat?._min.uploadedAt ?? null,
+      lastUploadAt: stat?._max.uploadedAt ?? null,
     }
   })
 

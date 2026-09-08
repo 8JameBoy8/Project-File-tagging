@@ -17,14 +17,17 @@ type AdminUser = {
   tags: string[];
 };
 
-type ModerationFile = {
+// ไฟล์จริงของ user คนหนึ่ง (จากตาราง File จริง ไม่ใช่ moderation queue) — ดู
+// GET /api/admin/user/[id]/files
+type UserFile = {
   id: string;
-  fileName: string | null;
-  fileType: string | null;
-  fileSize: number | null;
-  status: string;
-  uploadedBy: string;
-  createdAt: string;
+  name: string;
+  type: string;
+  ext: string;
+  size: number;
+  uploadedAt: string;
+  tags: string[];
+  hasPassword: boolean;
 };
 
 function formatBytes(bytes: number) {
@@ -44,20 +47,23 @@ export default function HomePage() {
   const isThai = lang === "th";
 
   const [users, setUsers] = useState<AdminUser[]>([]);
-  const [files, setFiles] = useState<ModerationFile[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [sortType, setSortType] = useState("newest");
   const [loading, setLoading] = useState(true);
 
+  // ไฟล์จริงของ user ที่เลือกอยู่ — ดึงจาก /api/admin/user/[id]/files (ตาราง File จริง) แทน
+  // /api/admin/moderation ที่เคยใช้ เพราะ moderation queue เก็บชื่อไฟล์/แท็กไว้แค่ ณ ตอนอัปโหลด
+  // ครั้งเดียว ไม่อัปเดตตามหลังเวลา user ไปเพิ่ม/ลบแท็กทีหลังผ่านหน้าจัดการแท็ก ทำให้จำนวนไฟล์และ
+  // แท็กที่โชว์ไม่ตรงกับความเป็นจริงปัจจุบัน (เจอจริงจากการทดสอบ)
+  const [userFiles, setUserFiles] = useState<UserFile[]>([]);
+  const [filesLoading, setFilesLoading] = useState(false);
+
   useEffect(() => {
-    Promise.all([
-      fetch("/api/admin/user?limit=100").then((res) => res.json()),
-      fetch("/api/admin/moderation?status=all").then((res) => res.json()),
-    ])
-      .then(([userData, fileData]) => {
+    fetch("/api/admin/user?limit=100")
+      .then((res) => res.json())
+      .then((userData) => {
         const loadedUsers: AdminUser[] = userData.users || [];
         setUsers(loadedUsers);
-        setFiles(fileData.items || []);
         if (loadedUsers.length) setSelectedUserId(loadedUsers[0].id);
       })
       .finally(() => setLoading(false));
@@ -65,22 +71,31 @@ export default function HomePage() {
 
   const selectedUser = users.find((u) => u.id === selectedUserId) ?? null;
 
+  useEffect(() => {
+    if (!selectedUserId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing with an external system (no user selected = clear the file list), not deriving state from props/state
+      setUserFiles([]);
+      return;
+    }
+    setFilesLoading(true);
+    fetch(`/api/admin/user/${selectedUserId}/files`)
+      .then((res) => res.json())
+      .then((data) => setUserFiles(data.files || []))
+      .catch(() => setUserFiles([]))
+      .finally(() => setFilesLoading(false));
+  }, [selectedUserId]);
+
   const sortedFiles = useMemo(() => {
-    const result = [...files];
+    const result = [...userFiles];
     if (sortType === "newest") {
-      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      result.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
     } else if (sortType === "oldest") {
-      result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      result.sort((a, b) => new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime());
     } else if (sortType === "alphabetical") {
-      result.sort((a, b) => (a.fileName || "").localeCompare(b.fileName || ""));
+      result.sort((a, b) => a.name.localeCompare(b.name));
     }
     return result;
-  }, [sortType, files]);
-
-  function userLabel(userId: string) {
-    const u = users.find((user) => user.id === userId);
-    return u ? u.displayName || u.email : userId;
-  }
+  }, [sortType, userFiles]);
 
   async function handleDelete() {
     if (!selectedUser) return;
@@ -169,19 +184,22 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* RIGHT: ALL FILES (ทุก user) — คลิกไฟล์เพื่อดูรายละเอียด user ที่อัปโหลดไฟล์นั้น */}
+          {/* RIGHT: ไฟล์จริงของ user ที่เลือกอยู่ทางซ้าย (ไม่ใช่ไฟล์ของทุกคนแล้ว — เดิมคลิกไฟล์
+              เพื่อสลับ selected user แต่ซ้ำซ้อนเพราะเลือก user ได้จากลิสต์ user อยู่แล้ว) */}
           <div className="file-list-card">
             <div className="file-list">
-              {sortedFiles.length === 0 ? (
-                <div className="empty-state">{isThai ? "ยังไม่มีไฟล์ในระบบ" : "No files yet"}</div>
+              {filesLoading ? (
+                <div className="empty-state">{isThai ? "กำลังโหลด..." : "Loading..."}</div>
+              ) : sortedFiles.length === 0 ? (
+                <div className="empty-state">{isThai ? "ยังไม่มีไฟล์" : "No files yet"}</div>
               ) : (
                 sortedFiles.map((file) => (
                   <ProductCard
                     key={file.id}
-                    title={userLabel(file.uploadedBy)}
-                    description={`${file.fileName ?? ""} • ${file.fileType ?? "?"} • ${formatBytes(file.fileSize ?? 0)} • ${file.status}`}
-                    selected={file.uploadedBy === selectedUser.id}
-                    onClick={() => setSelectedUserId(file.uploadedBy)}
+                    title={file.name}
+                    description={`${file.type} • ${formatBytes(file.size)} • ${
+                      file.tags.length > 0 ? file.tags.join(", ") : (isThai ? "ไม่มีแท็ก" : "no tags")
+                    }`}
                   />
                 ))
               )}
