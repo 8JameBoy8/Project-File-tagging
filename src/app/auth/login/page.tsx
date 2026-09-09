@@ -19,7 +19,7 @@ export default function LoginPage() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t } = useLanguage();
+  const { t, refreshProfile } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -40,6 +40,10 @@ function LoginForm() {
         setError(data?.error?.message || t("loginFailedMsg"));
         return;
       }
+      // สำคัญ: ต้อง refresh โปรไฟล์ทันที ไม่งั้น userProfile (ชื่อ/รูป/role ที่ context เก็บไว้)
+      // จะยังเป็นของ user คนก่อนหน้าค้างอยู่ (LanguageProvider ดึงโปรไฟล์แค่ตอน mount ครั้งแรก
+      // ของแท็บเท่านั้น — login ซ้อนกันหลายคนในแท็บเดียวโดยไม่ reload หน้าเลยเจอบั๊กนี้จริง)
+      await refreshProfile();
       router.push(searchParams.get("from") || "/user/home");
     } catch {
       setError(t("genericErrorMsg"));

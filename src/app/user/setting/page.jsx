@@ -8,7 +8,7 @@ import Topbar from '@/components/Topbar';
 
 export default function Setting() {
   const router = useRouter();
-  const { lang, changeLanguage, t } = useLanguage();
+  const { lang, changeLanguage, t, refreshProfile } = useLanguage();
 
   const goToPasswords = () => router.push('/user/filepassword');
   const goToProfile = () => router.push('/user/profile');
@@ -34,6 +34,9 @@ export default function Setting() {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
     } catch (e) { }
+    // เคลียร์ userProfile ที่ context เก็บไว้ (ไม่งั้นจะค้างเป็นของ user คนนี้ต่อไป แล้ว user คนถัดไป
+    // ที่ login ในแท็บเดียวกันจะเห็นชื่อ/ข้อมูลของคนก่อนหน้าแทนช่วงสั้นๆ ก่อน login เสร็จ)
+    await refreshProfile();
     router.push('/auth/login');
   };
 

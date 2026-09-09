@@ -172,6 +172,25 @@ export default function ManageTagPage() {
         }
     }
 
+    // ถอดแท็กออกจากไฟล์ — ฟีเจอร์นี้เดิมไม่มีอยู่ในหน้านี้เลย มีแค่ "+" ให้เพิ่มแท็กเข้าไฟล์
+    // (pick mode) แต่ไม่มีทางถอดแท็กออกจากไฟล์ที่ติดไปแล้วเลย ทั้งที่ backend
+    // (PUT /api/files/[id]/tags) รองรับอยู่แล้ว — เพิ่มปุ่ม "×" บน chip ของแต่ละแท็กในไฟล์การ์ด
+    // ให้กดถอดแท็กนั้นออกได้ตรงๆ โดยไม่ต้องพึ่ง selectedTag ที่เลือกไว้ด้านบน
+    const handleRemoveTagFromFile = async (file: FileItem, tagNameToRemove: string) => {
+        const remainingTagIds = file.tags
+            .filter(name => name !== tagNameToRemove)
+            .map(name => tags.find(t => t.name === name)?.id)
+            .filter((id): id is string => !!id)
+        try {
+            const res = await fetch(`/api/files/${file.id}/tags`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tagIds: remainingTagIds })
+            })
+            if (res.ok) fetchFiles()
+        } catch (e) { }
+    }
+
     const getFileIcon = (file: FileItem) => {
         if (file.type === 'document') return '📄'
         if (file.type === 'image') return '🖼️'
@@ -304,7 +323,16 @@ export default function ManageTagPage() {
                                 </div>
                                 <div style={{ textAlign: 'center', fontWeight: 500, fontSize: 14, color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</div>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6, justifyContent: 'center' }}>
-                                    {f.tags.map(t => <span key={t} style={{ fontSize: 10, background: 'var(--surface)', border: '1px solid var(--line)', padding: '2px 6px', borderRadius: 20, color: 'var(--muted)' }}>{t}</span>)}
+                                    {f.tags.map(tagName => (
+                                        <span key={tagName} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, background: 'var(--surface)', border: '1px solid var(--line)', padding: '2px 4px 2px 6px', borderRadius: 20, color: 'var(--muted)' }}>
+                                            {tagName}
+                                            <span
+                                                onClick={(e) => { e.stopPropagation(); handleRemoveTagFromFile(f, tagName) }}
+                                                title={t('removeTagFromFileTitle')}
+                                                style={{ cursor: 'pointer', fontWeight: 'bold', lineHeight: 1, padding: '0 2px' }}
+                                            >×</span>
+                                        </span>
+                                    ))}
                                 </div>
                             </div>
                         )

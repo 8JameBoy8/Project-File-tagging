@@ -43,12 +43,22 @@ export default function Profile() {
   }, [userProfile]);
 
   useEffect(() => {
-    fetch('/api/profile/storage')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data) setStorage(data);
-      })
-      .catch(() => {});
+    const loadStorage = () => {
+      fetch('/api/profile/storage')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data) setStorage(data);
+        })
+        .catch(() => {});
+    };
+
+    loadStorage();
+
+    // เดิม fetch แค่ตอน mount ครั้งแรกเท่านั้น — ถ้าอัปโหลดไฟล์จากหน้าอื่น/แท็บอื่นแล้วสลับกลับมา
+    // หน้านี้โดยไม่ reload ตัวเลขจะยังเป็นค่าเก่าค้างอยู่ (เจอจริง: "เพิ่มไฟล์แล้วพื้นที่ไม่ขึ้น")
+    // เพิ่ม refetch ตอนกลับมา focus แท็บนี้ด้วย
+    window.addEventListener('focus', loadStorage);
+    return () => window.removeEventListener('focus', loadStorage);
   }, []);
 
   const storagePercent = storage.limitBytes > 0 ? Math.min(100, (storage.usedBytes / storage.limitBytes) * 100) : 0;

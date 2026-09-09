@@ -7,7 +7,7 @@ import UserIcon from "@/components/UserIcon";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function SettingPage() {
-  const { lang, changeLanguage, t, userProfile } = useLanguage();
+  const { lang, changeLanguage, t, userProfile, refreshProfile } = useLanguage();
   const router = useRouter();
 
   const [totalUsers, setTotalUsers] = useState<number | null>(null);
@@ -21,6 +21,9 @@ export default function SettingPage() {
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    // เคลียร์ userProfile ที่ context เก็บไว้ (ไม่งั้นจะค้างเป็นของ admin คนนี้ต่อไปจนกว่าจะ
+    // reload หน้าเอง — เจอบั๊กจริงตอนสลับ login ระหว่าง user/admin คนละคนในแท็บเดียวกัน)
+    await refreshProfile();
     router.push("/auth/login");
   }
 

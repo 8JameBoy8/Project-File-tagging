@@ -9,7 +9,7 @@ import { useLanguage } from "@/context/LanguageContext";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, refreshProfile } = useLanguage();
   const [username, setUsername] = useState("");
 
   const [email, setEmail] = useState("");
@@ -43,12 +43,15 @@ export default function RegisterPage() {
       // /api/auth/register ตอนนี้ set cookie ให้เลยในตัว (เหมือน login) ไม่ต้องยิงซ้ำอีกรอบแล้ว
       // บันทึกชื่อผู้ใช้ที่กรอกไว้เป็น displayName จริงในระบบ (ไม่ block การไปหน้าถัดไปถ้าพลาด)
       if (username.trim()) {
-        fetch("/api/profile", {
+        await fetch("/api/profile", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ displayName: username.trim() }),
         }).catch(() => {});
       }
+      // สำคัญ: ต้อง refresh โปรไฟล์ทันที ไม่งั้น userProfile ที่ context เก็บไว้จะยังเป็นของ user
+      // คนก่อนหน้าค้างอยู่ (เจอบั๊กจริง: สมัคร/login ซ้อนกันหลายคนในแท็บเดียวโดยไม่ reload หน้าเลย)
+      await refreshProfile();
       router.push("/user/home");
     } catch {
       setError(t("genericErrorMsg"));

@@ -92,6 +92,7 @@ const translations = {
     hidePassword: 'Hide Password',
     noFilesFound: 'No files found.',
     searchFiles: 'Search files...',
+    removeTagFromFileTitle: 'Remove this tag from the file',
 
     enterFilePassword: 'Enter Your Account Password',
     filePasswordDescription: 'Enter your account (login) password once to view and manage all saved file passwords on this page.',
@@ -345,6 +346,7 @@ const translations = {
     hidePassword: 'ซ่อนรหัสผ่าน',
     noFilesFound: 'ไม่พบไฟล์',
     searchFiles: 'ค้นหาไฟล์...',
+    removeTagFromFileTitle: 'ลบแท็กนี้ออกจากไฟล์',
 
     enterFilePassword: 'กรอกรหัสผ่านบัญชีผู้ใช้',
     filePasswordDescription: 'กรอกรหัสผ่านบัญชีผู้ใช้ (รหัสผ่านเข้าสู่ระบบ) เพียงครั้งเดียว เพื่อดูและจัดการรหัสผ่านของไฟล์ทั้งหมดในหน้านี้',
