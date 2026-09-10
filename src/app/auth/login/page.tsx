@@ -44,7 +44,12 @@ function LoginForm() {
       // จะยังเป็นของ user คนก่อนหน้าค้างอยู่ (LanguageProvider ดึงโปรไฟล์แค่ตอน mount ครั้งแรก
       // ของแท็บเท่านั้น — login ซ้อนกันหลายคนในแท็บเดียวโดยไม่ reload หน้าเลยเจอบั๊กนี้จริง)
       await refreshProfile();
-      router.push(searchParams.get("from") || "/user/home");
+      // เลือกปลายทางตาม role: ถ้ามาจากหน้าที่ถูกเด้งออก (from) ให้กลับไปที่นั่น ไม่งั้น admin ไป
+      // /admin/home, user ทั่วไปไป /user/home — เดิม push ไป /user/home เสมอ ทำให้ admin login
+      // แล้วไปโผล่หน้า user (เข้าได้เพราะ proxy ปล่อยผ่านทุก role) ต้องพิมพ์ /admin/home เองถึงจะเจอ
+      const from = searchParams.get("from");
+      const dest = from || (data?.user?.role === "ADMIN" ? "/admin/home" : "/user/home");
+      router.push(dest);
     } catch {
       setError(t("genericErrorMsg"));
     } finally {
