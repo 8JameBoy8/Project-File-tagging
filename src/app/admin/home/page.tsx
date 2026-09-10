@@ -43,13 +43,20 @@ function formatBytes(bytes: number) {
 }
 
 export default function HomePage() {
-  const { t, lang } = useLanguage();
+  const { t, lang, userProfile } = useLanguage();
   const isThai = lang === "th";
 
-  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [allUsers, setAllUsers] = useState<AdminUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [sortType, setSortType] = useState("newest");
   const [loading, setLoading] = useState(true);
+
+  // ตัดบัญชี admin ที่ล็อกอินอยู่ออกจากลิสต์ — หน้านี้มีไว้จัดการ "ผู้ใช้คนอื่น" ไม่ใช่ตัวเอง
+  // (ตรงกับที่ฝั่ง mobile ทำ) ถึง backend จะกันลบตัวเองอยู่แล้วก็ตาม
+  const users = useMemo(
+    () => allUsers.filter((u) => u.id !== userProfile?.id),
+    [allUsers, userProfile?.id]
+  );
 
   // ไฟล์จริงของ user ที่เลือกอยู่ — ดึงจาก /api/admin/user/[id]/files (ตาราง File จริง) แทน
   // /api/admin/moderation ที่เคยใช้ เพราะ moderation queue เก็บชื่อไฟล์/แท็กไว้แค่ ณ ตอนอัปโหลด
@@ -61,15 +68,23 @@ export default function HomePage() {
   useEffect(() => {
     fetch("/api/admin/user?limit=100")
       .then((res) => res.json())
-      .then((userData) => {
-        const loadedUsers: AdminUser[] = userData.users || [];
-        setUsers(loadedUsers);
-        if (loadedUsers.length) setSelectedUserId(loadedUsers[0].id);
-      })
+      .then((userData) => setAllUsers(userData.users || []))
       .finally(() => setLoading(false));
   }, []);
 
   const selectedUser = users.find((u) => u.id === selectedUserId) ?? null;
+
+  // เลือก user คนแรกให้อัตโนมัติ และถ้าคนที่เลือกอยู่หายไป (ถูกลบ/ถูกกรองออก) ให้เด้งไปคนแรกที่เหลือ
+  useEffect(() => {
+    if (users.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- keeping selection in sync with the fetched user list
+      if (selectedUserId !== null) setSelectedUserId(null);
+      return;
+    }
+    if (!selectedUserId || !users.some((u) => u.id === selectedUserId)) {
+      setSelectedUserId(users[0].id);
+    }
+  }, [users, selectedUserId]);
 
   useEffect(() => {
     if (!selectedUserId) {
@@ -105,9 +120,8 @@ export default function HomePage() {
     const res = await fetch(`/api/admin/user/${selectedUser.id}`, { method: "DELETE" });
     if (res.ok) {
       alert(t("deleteUserSuccessMsg"));
-      const remaining = users.filter((u) => u.id !== selectedUser.id);
-      setUsers(remaining);
-      setSelectedUserId(remaining[0]?.id ?? null);
+      // ตัดออกจาก allUsers — effect ด้านบนจะเลือก user คนถัดไปให้เอง
+      setAllUsers((prev) => prev.filter((u) => u.id !== selectedUser.id));
     } else {
       const data = await res.json().catch(() => null);
       alert(data?.error?.message || t("deleteUserFailedMsg"));
@@ -135,8 +149,34 @@ export default function HomePage() {
       ) : !selectedUser ? (
         <div className="empty-state">{isThai ? "ยังไม่มีผู้ใช้ในระบบ" : "No users yet"}</div>
       ) : (
-        <section className="home-grid">
-          {/* LEFT: USER DETAILS */}
+        <section className="home-grid home-grid-3">
+          {/* LEFT: USER PICKER — เลือก user คนอื่นได้ (เดิมเลือกไม่ได้เลย ล็อกไว้ที่คนแรกคนเดียว) */}
+          <div className="user-picker-card">
+            <div className="user-picker-head">
+              <strong>{isThai ? "ผู้ใช้" : "Users"}</strong>
+              <span>{isThai ? `${users.length} คน` : `${users.length} users`}</span>
+            </div>
+            <div className="user-picker-list">
+              {users.map((u) => (
+                <button
+                  type="button"
+                  key={u.id}
+                  className={`user-picker-item${u.id === selectedUserId ? " active" : ""}`}
+                  onClick={() => setSelectedUserId(u.id)}
+                >
+                  <span className="user-picker-avatar">
+                    {(u.displayName || u.email || "?").charAt(0).toUpperCase()}
+                  </span>
+                  <span className="user-picker-text">
+                    <span className="user-picker-name">{u.displayName || u.email}</span>
+                    <span className="user-picker-email">{u.email}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* MIDDLE: USER DETAILS */}
           <div className="detail-card">
             <div className="preview-box">
               <UserIcon size={92} />

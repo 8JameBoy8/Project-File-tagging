@@ -93,6 +93,119 @@
   }
 }
 
+/* ===== Three-column grid (Home: user picker | details | files) ===== */
+.admin-page .home-grid-3 {
+  grid-template-columns: 250px 300px 1fr;
+}
+/* ต่ำกว่า 1100px วาง 3 คอลัมน์ไม่พอ — user picker อยู่บนสุดเต็มแถว แล้ว details + files อยู่ล่าง */
+@media (max-width: 1100px) {
+  .admin-page .home-grid-3 {
+    grid-template-columns: 320px 1fr;
+  }
+  .admin-page .home-grid-3 > .user-picker-card {
+    grid-column: 1 / -1;
+  }
+  .admin-page .home-grid-3 > .user-picker-card .user-picker-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .admin-page .home-grid-3 > .user-picker-card .user-picker-item {
+    width: auto;
+    min-width: 200px;
+  }
+}
+@media (max-width: 700px) {
+  .admin-page .home-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== User picker (Home left column) ===== */
+.admin-page .user-picker-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 640px;
+}
+.admin-page .user-picker-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 4px 6px;
+  font-size: 13.5px;
+}
+.admin-page .user-picker-head strong {
+  color: var(--muted);
+  font-weight: 500;
+}
+.admin-page .user-picker-head span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.admin-page .user-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+.admin-page .user-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: border-color 0.15s, background 0.15s;
+}
+.admin-page .user-picker-item:hover {
+  background: var(--surface-alt);
+}
+.admin-page .user-picker-item.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.admin-page .user-picker-avatar {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+.admin-page .user-picker-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.admin-page .user-picker-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.admin-page .user-picker-email {
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ===== Detail card (left column) ===== */
 .admin-page .detail-card {
   background: var(--surface);
