@@ -39,3 +39,6 @@ next-env.d.ts
 /uploads/
 dev.db
 *.db
+
+# ops script that writes directly to the production DB — keep local, do not commit
+/scripts/
