@@ -202,7 +202,7 @@ export default function ManageTagPage() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', paddingBottom: 30 }}>
             <Topbar title={t('manageTag')} />
-            <div style={{ padding: '20px 40px 0', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+            <div className="mt-content" style={{ padding: '20px 40px 0', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 20 }}>
                     <div style={{ backgroundColor: 'var(--surface-alt)', border: '1px solid var(--line)', padding: '10px 15px', borderRadius: 8, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -293,7 +293,7 @@ export default function ManageTagPage() {
                     </div>
                 )}
 
-                <div style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: 30, boxShadow: 'var(--shadow)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 25, flex: 1, overflowY: 'auto' }}>
+                <div className="mt-file-grid" style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: 30, boxShadow: 'var(--shadow)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 25, flex: 1, overflowY: 'auto' }}>
                     {files.map(f => {
                         const alreadyTagged = !!selectedTag && f.tags.includes(selectedTag.name)
                         const isSelected = selectedFileIds.has(f.id)
@@ -341,6 +341,17 @@ export default function ManageTagPage() {
                 </div>
 
             </div>
+            <style jsx>{`
+                @media (max-width: 640px) {
+                    .mt-content {
+                        padding: 14px 14px 0 !important;
+                    }
+                    .mt-file-grid {
+                        padding: 16px !important;
+                        gap: 14px !important;
+                    }
+                }
+            `}</style>
         </div>
     )
 }

@@ -44,6 +44,10 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  /* dvh = "dynamic viewport height" คิดตามพื้นที่ที่เห็นจริงตอนนั้น (มือถือ address bar โผล่/หด
+     แล้ว 100vh เดิมจะสูงเกิน/ต่ำกว่าจริงสลับกันไป เนื้อหาโดนตัดโผล่แถบขาวๆ) เบราว์เซอร์ที่ไม่รู้จัก
+     dvh จะข้าม declaration นี้ไปเฉยๆ เหลือ 100vh บรรทัดบนใช้งานต่อตามปกติ ไม่พังอะไร */
+  height: 100dvh;
   overflow: hidden;
 }
 

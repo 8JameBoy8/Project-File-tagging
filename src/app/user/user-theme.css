@@ -2075,3 +2075,37 @@ input:checked + .slider:before {
 .avatar-wrapper-large.avatar-clickable:focus-visible .avatar-hover-overlay {
   opacity: 1;
 }
+
+/* =========================================================
+   Mobile responsive additions
+   ========================================================= */
+
+/* .filter-controls-row (filepassword) เดิมไม่มี flex-wrap — search input (max-width 320) +
+   tag select (175px) วางคู่กันแล้วรวมกันเกินความกว้างจอมือถือ ล้นออกไปนอกการ์ด */
+.filter-controls-row {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .main-container-full,
+  .upload-layout-grid {
+    padding: 20px 14px 40px !important;
+  }
+  .card {
+    padding: 20px !important;
+  }
+  .search-input-wrapper {
+    max-width: 100% !important;
+    flex: 1 1 100%;
+  }
+  .tag-select-wrapper {
+    width: 100% !important;
+  }
+  .setting-content-clean {
+    padding-top: 1.5rem !important;
+  }
+  .avatar-wrapper-large {
+    width: 140px !important;
+    height: 140px !important;
+  }
+}

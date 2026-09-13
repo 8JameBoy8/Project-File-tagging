@@ -121,10 +121,10 @@ export default function HomePage() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Topbar title={t('home')} />
 
-      <div style={{ display: 'flex', gap: 22, padding: '18px 28px', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+      <div className="home-layout" style={{ display: 'flex', gap: 22, padding: '18px 28px', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
         {/* LEFT PANEL */}
-        <div style={{ flex: '0 1 40%', maxWidth: '40%', minWidth: 320, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 16, display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto' }}>
+        <div className="home-left-panel" style={{ flex: '0 1 40%', maxWidth: '40%', minWidth: 320, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)', padding: 16, display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto' }}>
 
           <div style={{ width: '100%', flex: '1 1 auto', minHeight: 140, maxHeight: '38vh', background: 'var(--surface-alt)', border: '1px solid var(--line)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
             {!selectedFile ? (
@@ -189,7 +189,7 @@ export default function HomePage() {
         </div>
 
         {/* RIGHT PANEL */}
-        <div style={{ flex: '1 1 60%', minWidth: 340, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <div className="home-right-panel" style={{ flex: '1 1 60%', minWidth: 340, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 14, flexShrink: 0, position: 'relative' }}>
             <div style={{ position: 'relative' }}>
@@ -251,6 +251,27 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* จอแคบ (มือถือ/แท็บเล็ต): panel ซ้าย-ขวาเดิมบังคับ minWidth รวมกันเกิน 660px วางคู่กันไม่พอ
+          บนจอมือถือ (overflow:hidden ตัวนอกจะตัดเนื้อหาส่วนเกินทิ้งเลย ไม่ใช่แค่ล้นเฉยๆ) — สลับเป็น
+          วางซ้อนกันแนวตั้งแทน แล้วเปิด scroll แนวตั้งของทั้งบล็อกนี้แทน */}
+      <style jsx>{`
+        @media (max-width: 860px) {
+          .home-layout {
+            flex-direction: column !important;
+            overflow-y: auto !important;
+            padding: 14px 16px !important;
+          }
+          .home-left-panel {
+            max-width: 100% !important;
+            min-width: 0 !important;
+            flex: 0 0 auto !important;
+          }
+          .home-right-panel {
+            min-width: 0 !important;
+            flex: 1 1 auto !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }

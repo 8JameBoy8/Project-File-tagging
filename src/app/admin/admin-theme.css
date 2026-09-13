@@ -14,6 +14,11 @@
   max-width: 1200px;
   margin: 0 auto;
 }
+@media (max-width: 640px) {
+  .admin-page .page-content {
+    padding: 14px 12px;
+  }
+}
 
 .admin-page h2 {
   font-family: 'Space Grotesk', sans-serif;

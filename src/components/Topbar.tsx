@@ -17,38 +17,39 @@ export default function Topbar({ title }: { title: string }) {
     ]
 
     return (
-        <div style={{
+        <div className="topbar" style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '14px 28px', background: 'var(--surface-alt)', borderBottom: '1px solid var(--line)', flexShrink: 0
+            padding: '14px 28px', background: 'var(--surface-alt)', borderBottom: '1px solid var(--line)', flexShrink: 0,
+            gap: 12,
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {/* scroll แนวนอนได้เป็น fallback กันแท็บล้นจอ (ปกติจะไม่ต้องใช้เพราะซ่อน label ที่จอแคบแล้ว) */}
+            <div className="topbar-tabs" style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: 'auto', minWidth: 0 }}>
                 {tabs.map(tab => {
                     const active = pathname === tab.href
                     return (
-                        <Link key={tab.href} href={tab.href} style={{
+                        <Link key={tab.href} href={tab.href} className="topbar-tab" style={{
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
                             padding: '8px 16px', borderRadius: 'var(--radius)', color: 'var(--ink)',
                             textDecoration: 'none', background: active ? 'var(--accent-soft)' : 'transparent',
-                            transition: 'background .15s ease' // in a real app, we'd use classNames for active state
+                            transition: 'background .15s ease', flexShrink: 0,
                         }}
-                        /* Add simple basic hover effect by wrapping in a class if we want, but inline works here for speed */
                         >
                             <div style={{ width: '20px', height: '20px', stroke: 'var(--ink)', fill: 'none', strokeWidth: 1.6, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                                 {tab.icon}
                             </div>
-                            <span style={{ fontSize: '12.5px', fontWeight: 500, color: active ? 'var(--accent)' : 'var(--muted)' }}>
+                            <span className="topbar-tab-label" style={{ fontSize: '12.5px', fontWeight: 500, color: active ? 'var(--accent)' : 'var(--muted)', whiteSpace: 'nowrap' }}>
                                 {tab.name}
                             </span>
                         </Link>
                     )
                 })}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '20px', letterSpacing: '.2px' }}>
+            <div className="topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
+                <span className="topbar-title" style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: '20px', letterSpacing: '.2px' }}>
                     {title}
                 </span>
                 {userProfile?.username && (
-                    <span style={{ fontSize: '13px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>{userProfile.username}</span>
+                    <span className="topbar-username" style={{ fontSize: '13px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>{userProfile.username}</span>
                 )}
                 <Link href="/user/profile" style={{
                     width: '42px', height: '42px', borderRadius: '50%', background: 'var(--accent-soft)',
@@ -64,6 +65,28 @@ export default function Topbar({ title }: { title: string }) {
                     )}
                 </Link>
             </div>
+            {/* จอแคบ (มือถือ): ซ่อนตัวหนังสือใต้ไอคอนแท็บ + ชื่อ user เพื่อประหยัดที่ ลดระยะ/ตัวอักษร
+                หัวข้อหน้าลง — เหลือแค่ไอคอนแท็บ + avatar ที่จำเป็นต้องกดได้เสมอ */}
+            <style jsx>{`
+                @media (max-width: 640px) {
+                    .topbar {
+                        padding: 10px 14px !important;
+                        gap: 8px !important;
+                    }
+                    .topbar-tab {
+                        padding: 6px 10px !important;
+                    }
+                    .topbar-tab-label {
+                        display: none;
+                    }
+                    .topbar-title {
+                        font-size: 15px !important;
+                    }
+                    .topbar-username {
+                        display: none;
+                    }
+                }
+            `}</style>
         </div>
     )
 }
