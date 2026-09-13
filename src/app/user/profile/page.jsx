@@ -7,10 +7,16 @@ import { Camera } from 'lucide-react';
 import DefaultAvatar from '@/components/DefaultAvatar';
 import Topbar from '@/components/Topbar';
 
+// เดิม format เป็น GB เสมอ (ปัดทศนิยม 2 ตำแหน่ง) — พื้นที่ใช้ไปน้อยๆ อย่าง 3 MB เลยกลายเป็น
+// "0.00 GB" มองแวบเดียวเหมือนใช้พื้นที่ 0 ไบต์ (เจอจริง: เห็น 0 บนเว็บ ทั้งที่มือถือของ account
+// เดียวกันแสดง "3.0 MB" ถูกต้อง) เปลี่ยนให้เลือกหน่วยเองตามขนาดจริง เหมือนฝั่ง mobile
+// (app/(app)/profile.tsx) แทน
 function formatBytes(bytes) {
-  if (!bytes || bytes <= 0) return '0 GB';
-  const gb = bytes / (1024 * 1024 * 1024);
-  return `${gb.toFixed(2)} GB`;
+  if (!bytes || bytes < 0) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 export default function Profile() {
