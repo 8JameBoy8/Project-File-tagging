@@ -76,6 +76,11 @@ function LoginForm() {
           </div>
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <InputField label="Gmail" type="email" placeholder="Example@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            {/* เดิมมี maxLength={8} ทำให้พิมพ์รหัสผ่านเกิน 8 ตัวไม่ได้เลย ทั้งที่ backend รับรหัสผ่าน
+                ยาวกว่า 8 ตัวได้ปกติ (validate แค่ min 8 ไม่มี max) — บัญชีที่สมัคร/ตั้งรหัสผ่านยาวกว่า
+                8 ตัวจากที่อื่น (เช่นมือถือ ที่ฟอร์มไม่ได้ล็อกไว้) เลย login ผ่านเว็บไม่ได้เลย ค่าที่ส่งไป
+                ถูกตัดเหลือ 8 ตัวแรกไปเทียบกับรหัสผ่านเต็มที่ถูก hash ไว้ (เจอจริง: สมัครฝั่งมือถือด้วย
+                รหัส 9 ตัว เข้ามือถือได้ปกติ แต่เข้าเว็บไม่ได้ "อีเมลหรือรหัสผ่านไม่ถูกต้อง") */}
             <InputField
               label={t("password")}
               type="password"
@@ -83,8 +88,6 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              maxLength={8}
-              minLength={8}
             />
             {error && <p className="text-sm text-red-500 text-center -mb-2">{error}</p>}
             <AuthButton text={submitting ? t("loggingInBtn") : t("loginBtn")} />

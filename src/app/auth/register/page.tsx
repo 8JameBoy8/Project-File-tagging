@@ -96,6 +96,9 @@ export default function RegisterPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
+            {/* เดิมมี maxLength={8} ล็อกให้ตั้งรหัสผ่านได้แค่ 8 ตัวเป๊ะๆ ทั้งที่ backend รับรหัสผ่านยาว
+                กว่า 8 ตัวได้ปกติ (validate แค่ min 8 ไม่มี max) — เอาออก เหลือแค่ minLength ให้ตรงกับ
+                กฎจริงของ backend (อย่างน้อย 8 ตัว ไม่จำกัดสูงสุด) */}
             <InputField
               label={t("password")}
               type="password"
@@ -103,7 +106,6 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              maxLength={8}
               minLength={8}
             />
             <InputField
@@ -113,7 +115,6 @@ export default function RegisterPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              maxLength={8}
               minLength={8}
             />
             {error && <p className="text-sm text-red-500 text-center -mb-2">{error}</p>}

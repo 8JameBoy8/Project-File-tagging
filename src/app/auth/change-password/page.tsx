@@ -81,6 +81,8 @@ function ChangePasswordForm() {
             <h2 className="text-2xl font-bold text-black mb-6 tracking-wider">{t("changePasswordPageTitle")}</h2>
           </div>
          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            {/* เดิมมี maxLength={8} ล็อกให้ตั้งรหัสผ่านใหม่ได้แค่ 8 ตัวเป๊ะๆ ทั้งที่ /api/auth/reset-password
+                รับรหัสผ่านยาวกว่า 8 ตัวได้ปกติ (validate แค่ min 8 ไม่มี max) — เอาออก */}
             <InputField
               label={t("password")}
               type="password"
@@ -88,7 +90,6 @@ function ChangePasswordForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              maxLength={8}
               minLength={8}
             />
             <InputField
@@ -98,7 +99,6 @@ function ChangePasswordForm() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              maxLength={8}
               minLength={8}
             />
             {error && <p className="text-sm text-red-500 text-center -mb-2">{error}</p>}
